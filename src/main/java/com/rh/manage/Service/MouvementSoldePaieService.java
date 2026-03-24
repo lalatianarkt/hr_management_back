@@ -8,6 +8,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.rh.manage.Model.Employe;
+import com.rh.manage.Model.MouvementSolde;
 import com.rh.manage.Model.MouvementSoldePaie;
 import com.rh.manage.Repository.MouvementSoldePaieRepository;
 
@@ -33,7 +35,7 @@ public class MouvementSoldePaieService {
     }
 
     public MouvementSoldePaie createWithPaie(MouvementSoldePaie mouvement){
-
+        mouvementSoldeService.getDernierMouvementSoldeParEmployeEtParAnnee(Employe employe, int annee)
     }
 
     /**
