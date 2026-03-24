@@ -3,6 +3,8 @@ package com.rh.manage.Controller;
 import com.rh.manage.Dto.DepartementHierarchiqueDTO;
 import com.rh.manage.Dto.ManagerHierarchiqueDTO;
 import com.rh.manage.Dto.EmployeCompactDTO;
+import com.rh.manage.Model.InfosProfessionnelles;
+import com.rh.manage.Service.InfosProfessionnellesService;
 import com.rh.manage.Service.VueEmployeManagerCompletService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,9 +18,13 @@ import java.util.Map;
 public class VueEmployeManagerCompletController {
     
     private final VueEmployeManagerCompletService service;
+    private final InfosProfessionnellesService infosProfessionnellesService;
     
-    public VueEmployeManagerCompletController(VueEmployeManagerCompletService service) {
+    public VueEmployeManagerCompletController(
+            VueEmployeManagerCompletService service,
+            InfosProfessionnellesService infosProfessionnellesService) {
         this.service = service;
+        this.infosProfessionnellesService = infosProfessionnellesService;
     }
     
     // 1. Endpoint principal pour l'organigramme compact
@@ -532,4 +538,81 @@ public class VueEmployeManagerCompletController {
     //         "managers", List.of()
     //     ));
     // }
+    @GetMapping("/manager/matricule/{matricule}")
+    public ResponseEntity<Map<String, Object>> getManagerCompactByMatricule(@PathVariable String matricule) {
+        Map<String, Object> organigramme = service.getOrganigrammeCompact();
+        @SuppressWarnings("unchecked")
+        List<DepartementHierarchiqueDTO> hierarchie = (List<DepartementHierarchiqueDTO>) organigramme.get("hierarchie");
+        InfosProfessionnelles infosPro = infosProfessionnellesService.findByMatricule(matricule).orElse(null);
+
+        if (infosPro == null || infosPro.getEmploye() == null) {
+            return ResponseEntity.ok(Map.of(
+                "status", "not_found",
+                "message", "Aucun employe actif trouve pour le matricule: " + matricule
+            ));
+        }
+
+        String nom = infosPro.getEmploye().getNom() != null ? infosPro.getEmploye().getNom().trim() : "";
+        String prenom = infosPro.getEmploye().getPrenom() != null ? infosPro.getEmploye().getPrenom().trim() : "";
+        String nomPrenom = (nom + " " + prenom).trim();
+        String prenomNom = (prenom + " " + nom).trim();
+
+        if (hierarchie != null) {
+            for (DepartementHierarchiqueDTO departement : hierarchie) {
+                java.util.Optional<ManagerHierarchiqueDTO> manager = departement.getManagers().stream()
+                    .filter(m -> matchesManagerIdentity(m, matricule, nomPrenom, prenomNom))
+                    .findFirst();
+
+                if (manager.isPresent()) {
+                    int nbSubordonnes = 0;
+                    if (manager.get().getSubordonnesCompacts() != null) {
+                        nbSubordonnes = manager.get().getSubordonnesCompacts().size();
+                    } else if (manager.get().getSubordonnes() != null) {
+                        nbSubordonnes = manager.get().getSubordonnes().size();
+                    }
+
+                    Map<String, Object> response = Map.of(
+                        "status", "success",
+                        "manager", manager.get(),
+                        "departement", departement.getNomDepartement(),
+                        "nombreSubordonnes", nbSubordonnes,
+                        "timestamp", System.currentTimeMillis()
+                    );
+                    return ResponseEntity.ok(response);
+                }
+            }
+        }
+
+        return ResponseEntity.ok(Map.of(
+            "status", "not_found",
+            "message", "Manager non trouve pour le matricule: " + matricule
+        ));
+    }
+
+    private boolean matchesManagerIdentity(
+            ManagerHierarchiqueDTO manager,
+            String matricule,
+            String nomPrenom,
+            String prenomNom) {
+        if (manager == null) {
+            return false;
+        }
+
+        if (manager.getMatricule() != null && manager.getMatricule().equalsIgnoreCase(matricule)) {
+            return true;
+        }
+
+        String nomManager = normalize(manager.getNomComplet());
+        return !nomManager.isEmpty() && (
+            nomManager.equals(normalize(nomPrenom)) ||
+            nomManager.equals(normalize(prenomNom))
+        );
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim().replaceAll("\\s+", " ").toLowerCase();
+    }
 }

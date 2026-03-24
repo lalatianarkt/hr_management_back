@@ -93,7 +93,7 @@ public class UserService {
         response.put("message", "Authentification réussie");
         response.put("token", token.getTokenGenere());
         response.put("infosPro", infosPro);
-        response.put("user", buildUserResponse(user, employe));
+        response.put("user", buildUserResponse(user, employe, infosPro));
         response.put("path", path);
         return response;
     }
@@ -111,11 +111,12 @@ public class UserService {
         }
     }
     
-    private Map<String, Object> buildUserResponse(User user, Employe employe) {
+    private Map<String, Object> buildUserResponse(User user, Employe employe, InfosProfessionnelles infosPro) {
         Map<String, Object> userResponse = new HashMap<>();
         userResponse.put("email", user.getEmail());
         userResponse.put("role", user.getTypeUser().getType());
         userResponse.put("nomComplet", employe.getPrenom() + " " + employe.getNom());
+        userResponse.put("matricule", infosPro != null ? infosPro.getMatricule() : null);
         return userResponse;
     }
     
