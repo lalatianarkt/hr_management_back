@@ -192,9 +192,9 @@ public class PaieFilleService {
                 paieFilleToCreate.setBase(BigDecimal.valueOf(montant));
                 // paieFilleToCreate.setMontant(BigDecimal.valueOf(montant));    
             } 
-            if(base.equalsIgnoreCase("IND_CONG")){
-                montant
-            }
+            // if(base.equalsIgnoreCase("IND_CONG")){
+            //     montant
+            // }
 
             if(rubriquePaie.getFormule().getNombre() != null && rubriquePaie.getFormule().getTaux() != null){
                 montant = montant * paieFille.getNombre().doubleValue() * paieFille.getTaux().doubleValue() / 100;
