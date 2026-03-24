@@ -18,6 +18,9 @@ import java.util.List;
 public class MouvementSoldePaieService {
 
     @Autowired
+    private MouvementSoldeService mouvementSoldeService;
+
+    @Autowired
     private MouvementSoldePaieRepository repository;
 
     /**
@@ -27,6 +30,10 @@ public class MouvementSoldePaieService {
     public MouvementSoldePaie createMouvement(MouvementSoldePaie mouvement) {
         mouvement.setDateHeureSaisie(LocalDateTime.now());
         return repository.save(mouvement);
+    }
+
+    public MouvementSoldePaie createWithPaie(MouvementSoldePaie mouvement){
+
     }
 
     /**
