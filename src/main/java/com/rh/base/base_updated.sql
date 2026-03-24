@@ -1233,9 +1233,10 @@ CREATE TABLE preparation_export_employe(
 
 CREATE TABLE mouvement_solde_paie(
    id SERIAL,
-   id_mouvement_solde VARCHAR(50) ,
-   date_heure_saisie TIMESTAMP,
+   id_mouvement_solde INTEGER,
    id_paie VARCHAR(50) ,
+   id_employe VARCHAR(50) ,
+   date_heure_saisie TIMESTAMP,
    nb_conge_a_reporter NUMERIC(15,2)  ,
    nb_conge_dans_paie NUMERIC(15,2)  ,
    nb_conge_dans_mouvement_solde NUMERIC(15,2)  ,

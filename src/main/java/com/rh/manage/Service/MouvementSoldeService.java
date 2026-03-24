@@ -69,7 +69,7 @@ public class MouvementSoldeService {
     }
 
     public Optional<MouvementSolde> getDernierMouvementSoldeParEmployeEtParAnnee(Employe employe, int annee){
-        return repository.findFirstByEmployeAndStatutOrderByMoisDescCreatedAtDesc(employe, annee);
+        return repository.findFirstByEmployeAndAnneeAndStatutOrderByMoisDescCreatedAtDesc(employe, annee, 1);
     } 
 
     public Optional<MouvementSolde> findByEmployeAndStatutOrderByCreatedAtDesc(Employe employe){

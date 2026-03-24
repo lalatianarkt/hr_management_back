@@ -14,12 +14,12 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface MouvementSoldePaieRepository extends JpaRepository<MouvementSoldePaie, Long> {
+public interface MouvementSoldePaieRepository extends JpaRepository<MouvementSoldePaie, Integer> {
 
     /**
      * Trouver un mouvement par son ID unique
      */
-    Optional<MouvementSoldePaie> findByIdMouvementSolde(String idMouvementSolde);
+    Optional<MouvementSoldePaie> findByIdMouvementSolde(int idMouvementSolde);
 
     /**
      * Trouver tous les mouvements pour une paie spécifique

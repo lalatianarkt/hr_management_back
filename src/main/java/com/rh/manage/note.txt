@@ -1,0 +1,140 @@
+================================================================================
+                    EXPLICATION DES FORMULES DE RUBRIQUES
+================================================================================
+
+La formule de chaque rubrique est composée de plusieurs éléments :
+1. MODE DE CALCUL (Auto, Calculé, Manuel)
+2. BASE (la valeur de référence pour calculer le montant)
+3. NOMBRE et TAUX (paramètres de multiplication/pourcentage)
+
+================================================================================
+                          1. MODES DE CALCUL
+================================================================================
+
+AUTO : 
+  - Le système calcule automatiquement la base en fonction de la rubrique
+  - Les paramètres nombre et taux peuvent être appliqués
+  - La base est recalculée en fonction de la configuration de la rubrique
+
+CALCULE : 
+  - Similaire à AUTO mais avec une approche différente
+  - Utilise la base définie et applique nombre/taux
+  - Montant = Base × Nombre × (Taux/100)
+
+MANUEL : 
+  - L'utilisateur saisit directement le montant
+  - Aucun calcul automatique n'est effectué
+  - Montant = Montant saisi
+
+
+================================================================================
+                          2. TYPES DE BASES
+================================================================================
+
+SALAIRE_BASE :
+  - Utilise le salaire de base de l'employé (infosProfessionnelles.salaireBase)
+  - Exemple: Contribution patron (cotisation basée sur salaire de base)
+
+AFAM (Allocation Familiale) :
+  - Montant fixe d'allocation familiale défini dans RegleGestionConges
+  - Exemple: Prime familiale pour chaque enfant
+
+SH (Salaire Horaire) :
+  - Salaire horaire = Salaire de base / 173.33 (standard mensuel)
+  - Utilisé pour les calculs horaires
+  - Exemple: Heures supplémentaires, primes horaires
+
+SJ (Salaire Journalier) :
+  - Salaire journalier = Salaire de base / 30
+  - Utilisé pour les calculs journaliers
+  - Exemple: Indemnité de déplacement par jour, prime journalière
+
+SBRUT (Salaire Brut) :
+  - Somme de tous les gains (rubriques positives)
+  - Récupère tous les PaieFille avec type GAIN déjà saisies
+  - Exemple: Calcul de cotisations ou impôts basés sur le brut
+
+T_COT (Total Cotisation) :
+  - Total des salaires soumis aux cotisations CNAPS
+  - Applique le plafond mensuel si défini
+  - Exemple: Cotisation employee CNAPS (plafonné)
+
+IND_CONG (Indemnité Congé) :
+  - Crée automatiquement un mouvement de solde de paie
+  - Enregistre l'indemnité de congé avec traces
+  - Exemple: Indemnité de congé annuel payée
+
+SNET_IMP (Salaire Net Imposable) :
+  - Base pour le calcul de l'impôt sur le revenu (IRSA)
+  - Base = Salaire Brut Total - Déductions IRSA
+  - Montant = Calcul IRSA sur la base
+  - Exemple: Impôt sur le revenu annuel
+
+
+================================================================================
+                       3. FORMULE COMPLETE (Montant)
+================================================================================
+
+Le montant final est calculé selon cette logique :
+
+Étape 1 : Déterminer la base
+  └─> Selon le type de base défini dans la rubrique
+
+Étape 2 : Appliquer les paramètres nombre et taux (si présents)
+  ├─> Si NOMBRE et TAUX existent :
+  │   Montant = Base × Nombre × (Taux / 100)
+  ├─> Si NOMBRE seul :
+  │   Montant = Base × Nombre
+  └─> Si TAUX seul :
+      Montant = Base × (Taux / 100)
+
+Étape 3 : Cas spéciaux
+  ├─> SNET_IMP : Applique le calcul IRSA sur la base
+  ├─> IND_CONG : Crée un mouvement de paie supplémentaire
+  └─> T_COT : Applique un plafond mensuel si configuré
+
+
+================================================================================
+                       4. EXEMPLES PRATIQUES
+================================================================================
+
+Exemple 1 : SALAIRE_BASE avec TAUX (cotisation)
+  - Base = 100 000 Ar (salaire de base)
+  - Taux = 5.5% (cotisation employee)
+  - Montant = 100 000 × (5.5 / 100) = 5 500 Ar
+
+Exemple 2 : SJ avec NOMBRE (bonus journalier)
+  - Salaire de base = 30 000 Ar
+  - Base = 30 000 / 30 = 1 000 Ar (salaire journalier)
+  - Nombre = 2 jours
+  - Montant = 1 000 × 2 = 2 000 Ar
+
+Exemple 3 : SH avec NOMBRE et TAUX (heures supplémentaires)
+  - Salaire de base = 200 000 Ar
+  - Base = 200 000 / 173.33 = 1 154.97 Ar (salaire horaire)
+  - Nombre = 10 heures
+  - Taux = 50% (majoration)
+  - Montant = 1 154.97 × 10 × (50 / 100) = 5 774.85 Ar
+
+Exemple 4 : MANUEL (primes spéciales)
+  - Montant saisi directement = 50 000 Ar
+  - Aucun calcul, valeur directe utilisée
+
+Exemple 5 : SNET_IMP (impôt sur le revenu)
+  - Salaire Brut Total = 150 000 Ar
+  - Déductions IRSA = 10 000 Ar (cotisations non imposables)
+  - Base = 150 000 - 10 000 = 140 000 Ar
+  - Montant = Calcul IRSA(140 000) selon barème fiscal
+
+
+================================================================================
+                       5. POINTS IMPORTANTS
+================================================================================
+
+✓ L'ordre des rubriques est IMPORTANT : chaque rubrique dépend des précédentes
+✓ Les GAINS (SBRUT) doivent être saisis AVANT les déductions
+✓ Les valeurs AFAM, plafonds, etc. viennent de RegleGestionConges
+✓ Les calculs AUTO mettent à jour automatiquement si les infos changent
+✓ UPDATE applique la MÊME logique que CREATE pour la cohérence
+
+================================================================================
