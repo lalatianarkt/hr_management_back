@@ -9,10 +9,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.rh.manage.Model.Employe;
+import com.rh.manage.Model.Mouvement;
 import com.rh.manage.Model.MouvementSolde;
 import com.rh.manage.Model.MouvementSoldePaie;
+import com.rh.manage.Model.PaieFille;
 import com.rh.manage.Repository.MouvementSoldePaieRepository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -25,17 +28,43 @@ public class MouvementSoldePaieService {
     @Autowired
     private MouvementSoldePaieRepository repository;
 
+    @Autowired
+    private EmployeService employeService;
+
     /**
      * Créer un nouveau mouvement de solde
      */
     @Transactional
     public MouvementSoldePaie createMouvement(MouvementSoldePaie mouvement) {
-        mouvement.setDateHeureSaisie(LocalDateTime.now());
         return repository.save(mouvement);
     }
 
-    public MouvementSoldePaie createWithPaie(MouvementSoldePaie mouvement){
-        mouvementSoldeService.getDernierMouvementSoldeParEmployeEtParAnnee(Employe employe, int annee)
+    @Transactional
+    public MouvementSoldePaie createWithPaie(MouvementSoldePaie mouvement, PaieFille paieFille){ 
+        String idEmp = mouvement.getIdEmploye();
+        Employe employe = employeService.getById(idEmp).get();
+        int anneeActuel = LocalDateTime.now().getYear();
+        double nb_conge_dans_paie = Double.parseDouble(paieFille.getNombre().toString());
+        mouvement.setNbCongeDansPaie(nb_conge_dans_paie);
+        System.out.println("dernierMvt : " + mouvementSoldeService.getDernierMouvementSoldeParEmployeEtParAnnee(employe, anneeActuel).isPresent());
+        if(mouvementSoldeService.getDernierMouvementSoldeParEmployeEtParAnnee(employe, anneeActuel).isPresent()){
+            MouvementSolde mvtSolde = mouvementSoldeService.getDernierMouvementSoldeParEmployeEtParAnnee(employe, anneeActuel).get();
+            double nb_conge_pris_reel = mvtSolde.getNbCongePris();
+
+            mouvement.setIdMouvementSolde(mvtSolde.getId());
+            mouvement.setNbCongeDansMouvementSolde(nb_conge_pris_reel);
+
+            if(nb_conge_pris_reel - nb_conge_dans_paie == 0){
+                mouvement.setNbCongeAReporter(0.0);
+            } else { //que ce soit sup ou inf
+                mouvement.setNbCongeAReporter(nb_conge_pris_reel - nb_conge_dans_paie); 
+            } 
+        } else {
+            mouvement.setNbCongeDansMouvementSolde(0.0);
+            mouvement.setNbCongeAReporter(0.0);
+        }
+        MouvementSoldePaie mvtInserted = createMouvement(mouvement);
+        return mvtInserted;
     }
 
     /**
@@ -59,7 +88,7 @@ public class MouvementSoldePaieService {
     /**
      * Récupérer un mouvement par son ID
      */
-    public MouvementSoldePaie getMouvementById(Long id) {
+    public MouvementSoldePaie getMouvementById(int id) {
         return repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Mouvement non trouvé avec l'id: " + id));
     }
@@ -67,7 +96,7 @@ public class MouvementSoldePaieService {
     /**
      * Récupérer un mouvement par son ID unique
      */
-    public MouvementSoldePaie getMouvementByIdMouvementSolde(String idMouvementSolde) {
+    public MouvementSoldePaie getMouvementByIdMouvementSolde(int idMouvementSolde) {
         return repository.findByIdMouvementSolde(idMouvementSolde)
                 .orElseThrow(() -> new RuntimeException("Mouvement non trouvé avec l'id: " + idMouvementSolde));
     }
@@ -90,7 +119,7 @@ public class MouvementSoldePaieService {
      * Mettre à jour un mouvement
      */
     @Transactional
-    public MouvementSoldePaie updateMouvement(Long id, MouvementSoldePaie mouvementDetails) {
+    public MouvementSoldePaie updateMouvement(int id, MouvementSoldePaie mouvementDetails) {
         MouvementSoldePaie mouvement = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Mouvement non trouvé avec l'id: " + id));
         
@@ -106,7 +135,7 @@ public class MouvementSoldePaieService {
      * Supprimer un mouvement
      */
     @Transactional
-    public void deleteMouvement(Long id) {
+    public void deleteMouvement(int id) {
         repository.deleteById(id);
     }
 

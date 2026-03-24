@@ -15,8 +15,11 @@ public class MouvementSoldePaie {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "id_mouvement_solde", length = 50, unique = true)
-    private String idMouvementSolde;
+    @Column(name = "id_mouvement_solde")
+    private int idMouvementSolde;
+
+    @Column(name = "id_employe")
+    private String idEmploye;
 
     @Column(name = "date_heure_saisie")
     private LocalDateTime dateHeureSaisie;
@@ -40,27 +43,8 @@ public class MouvementSoldePaie {
     // Constructeurs
     public MouvementSoldePaie() {}
 
-    public MouvementSoldePaie(String idPaie, Double nbCongeAReporter, Double nbCongeDansPaie, Double nbCongeDansMouvementSolde) {
-        this.idMouvementSolde = generateId();
-        this.dateHeureSaisie = LocalDateTime.now();
-        this.idPaie = idPaie;
-        this.nbCongeAReporter = nbCongeAReporter;
-        this.nbCongeDansPaie = nbCongeDansPaie;
-        this.nbCongeDansMouvementSolde = nbCongeDansMouvementSolde;
-    }
-
-    // Méthode pour générer un ID unique
-    private String generateId() {
-        String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String shortUuid = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        return "MS-PAIE-" + datePart + "-" + shortUuid;
-    }
-
     @PrePersist
     protected void onCreate() {
-        if (this.idMouvementSolde == null) {
-            this.idMouvementSolde = generateId();
-        }
         if (this.dateHeureSaisie == null) {
             this.dateHeureSaisie = LocalDateTime.now();
         }
@@ -75,11 +59,11 @@ public class MouvementSoldePaie {
         this.id = id;
     }
 
-    public String getIdMouvementSolde() {
+    public int getIdMouvementSolde() {
         return idMouvementSolde;
     }
 
-    public void setIdMouvementSolde(String idMouvementSolde) {
+    public void setIdMouvementSolde(int idMouvementSolde) {
         this.idMouvementSolde = idMouvementSolde;
     }
 
@@ -130,4 +114,13 @@ public class MouvementSoldePaie {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
+    public String getIdEmploye() {
+        return idEmploye;
+    }
+
+    public void setIdEmploye(String idEmploye) {
+        this.idEmploye = idEmploye;
+    }
+
 }

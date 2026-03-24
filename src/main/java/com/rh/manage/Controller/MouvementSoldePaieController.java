@@ -55,7 +55,7 @@ public class MouvementSoldePaieController {
      * Récupérer un mouvement par son ID
      */
     @GetMapping("/{id}")
-    public ResponseEntity<MouvementSoldePaie> getMouvementById(@PathVariable Long id) {
+    public ResponseEntity<MouvementSoldePaie> getMouvementById(@PathVariable int id) {
         MouvementSoldePaie mouvement = service.getMouvementById(id);
         return ResponseEntity.ok(mouvement);
     }
@@ -65,7 +65,7 @@ public class MouvementSoldePaieController {
      */
     @GetMapping("/reference/{idMouvementSolde}")
     public ResponseEntity<MouvementSoldePaie> getMouvementByIdMouvementSolde(
-            @PathVariable String idMouvementSolde) {
+            @PathVariable int idMouvementSolde) {
         MouvementSoldePaie mouvement = service.getMouvementByIdMouvementSolde(idMouvementSolde);
         return ResponseEntity.ok(mouvement);
     }
@@ -95,7 +95,7 @@ public class MouvementSoldePaieController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<MouvementSoldePaie> updateMouvement(
-            @PathVariable Long id,
+            @PathVariable int id,
             @RequestBody MouvementSoldePaie mouvement) {
         MouvementSoldePaie updated = service.updateMouvement(id, mouvement);
         return ResponseEntity.ok(updated);
@@ -105,7 +105,7 @@ public class MouvementSoldePaieController {
      * Supprimer un mouvement
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMouvement(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteMouvement(@PathVariable int id) {
         service.deleteMouvement(id);
         return ResponseEntity.noContent().build();
     }

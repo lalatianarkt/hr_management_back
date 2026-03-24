@@ -164,10 +164,12 @@ public class PaieFilleController {
             @PathVariable Long id, 
             @RequestBody PaieFille paieFille) {
         
+        PaieFille updated;
         try {
-            PaieFille updated = paieFilleService.update(id, paieFille);
+            updated = paieFilleService.update(id, paieFille);
             return ResponseEntity.ok(updated);
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.notFound().build();
         }
     }

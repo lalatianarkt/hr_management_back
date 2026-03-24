@@ -161,5 +161,11 @@ public interface MouvementSoldeRepository extends JpaRepository<MouvementSolde, 
             Employe employe,
             Integer statut
     );
+
+    Optional<MouvementSolde> findFirstByEmployeAndAnneeAndStatutOrderByMoisDescCreatedAtDesc(
+            Employe employe,
+            Integer annee,
+            Integer statut
+    );
 }
 

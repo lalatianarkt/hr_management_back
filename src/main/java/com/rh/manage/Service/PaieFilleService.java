@@ -1,5 +1,6 @@
 package com.rh.manage.Service;
 
+import com.rh.manage.Service.MouvementSoldeService;
 import jakarta.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.JsonSerializable.Base;
 import com.rh.manage.Enum.ModeCalcul;
 import com.rh.manage.Model.InfosProfessionnelles;
+import com.rh.manage.Model.MouvementSoldePaie;
 import com.rh.manage.Model.Paie;
 import com.rh.manage.Model.PaieFille;
 import com.rh.manage.Model.RegleGestionConges;
@@ -44,6 +46,9 @@ public class PaieFilleService {
 
     @Autowired
     private PaieService paieService;
+
+    @Autowired
+    private MouvementSoldePaieService mouvementSoldePaieService;
 
     public Optional<PaieFille> getById(Long id) {
         return paieFilleRepository.findById(id);
@@ -192,8 +197,12 @@ public class PaieFilleService {
                 paieFilleToCreate.setBase(BigDecimal.valueOf(montant));
                 // paieFilleToCreate.setMontant(BigDecimal.valueOf(montant));    
             } 
-            if(base.equalsIgnoreCase("IND_CONG")){
-                // montant
+            if(rubriquePaie.getCode().equalsIgnoreCase("IND_CONG")){
+                System.out.println("Ato e+++++++++++++++++++++++++++++++");
+                MouvementSoldePaie mouvement = new MouvementSoldePaie();
+                mouvement.setIdEmploye(paie.getEmploye().getId());
+                mouvement.setIdPaie(paie.getId());
+                mouvementSoldePaieService.createWithPaie(mouvement, paieFilleToCreate);
             }
 
             if(rubriquePaie.getFormule().getNombre() != null && rubriquePaie.getFormule().getTaux() != null){
@@ -275,18 +284,128 @@ public class PaieFilleService {
     }
     
     @Transactional
-    public PaieFille update(Long id, PaieFille paieFilleDetails) {
+    public PaieFille update(Long id, PaieFille paieFilleDetails) throws Exception {
         return paieFilleRepository.findById(id)
                 .map(existingPaieFille -> {
-                    existingPaieFille.setTaux(paieFilleDetails.getTaux());
-                    existingPaieFille.setBase(paieFilleDetails.getBase());
-                    existingPaieFille.setNombre(paieFilleDetails.getNombre());
-                    existingPaieFille.setModifiedAt(LocalDateTime.now());
-                    
-                    // Recalculer le montant
-                    // calculerMontant(existingPaieFille);
-                    
-                    return paieFilleRepository.save(existingPaieFille);
+                    try {
+                        RubriquePaie rubriquePaie = rubriquePaieService.getById(existingPaieFille.getRubrique().getId()).get();
+                        Paie paie = paieService.getById(existingPaieFille.getPaie().getId()).get();
+                        
+                        existingPaieFille.setTaux(paieFilleDetails.getTaux());
+                        existingPaieFille.setBase(paieFilleDetails.getBase());
+                        existingPaieFille.setNombre(paieFilleDetails.getNombre());
+                        existingPaieFille.setModifiedAt(LocalDateTime.now());
+                        
+                        // Recalculer le montant selon les mêmes principes que create
+                        List<PaieFille> les_gains = paieFilleRepository.findGainsByPaieId(paie.getId());
+                        InfosProfessionnelles infoProActuel = infosProfessionnellesService.getInfosProEmploye(paie.getEmploye().getId());
+                        double salaire_base = infoProActuel.getSalaireBase();
+                        String modeCalculStr = rubriquePaie.getModeCalcul().name();
+                        String base = rubriquePaie.getFormule().getBase();
+                        double fact = 0;
+                        double montant = 1;
+                        
+                        if ("AUTO".equals(modeCalculStr)) {
+                            if(base.equalsIgnoreCase("SALAIRE_BASE")){
+                               existingPaieFille.setBase(BigDecimal.valueOf(salaire_base));
+                               montant = salaire_base;
+                            }
+                            if(base.equalsIgnoreCase("AFAM")){
+                                existingPaieFille.setBase(BigDecimal.valueOf(regleGestionCongesService.getDerniereRegleGestionCongesParStatutActive().getAllocationFamiliale()));
+                                montant = regleGestionCongesService.getDerniereRegleGestionCongesParStatutActive().getAllocationFamiliale();
+                            }
+                            if(base.equalsIgnoreCase("SH")){
+                               existingPaieFille.setBase(BigDecimal.valueOf(salaire_base / 173.33));
+                               montant = salaire_base / 173.33;
+                            }
+                            if(base.equalsIgnoreCase("SJ")){
+                               existingPaieFille.setBase(BigDecimal.valueOf(salaire_base/30));
+                               montant = salaire_base / 30;
+                            }
+                            if(base.equalsIgnoreCase("SBRUT")){
+                              for (PaieFille gain : les_gains) {
+                                fact = fact +  gain.getMontant().doubleValue();
+                              }
+                              existingPaieFille.setBase(BigDecimal.valueOf(fact));
+                              montant = fact;
+                            }
+                            if(base.equalsIgnoreCase("T_COT")){
+                                montant = calculSoumisCnaps(paie.getId(), rubriquePaie);
+                                existingPaieFille.setBase(BigDecimal.valueOf(montant));
+                            }
+                            System.out.println("mode auto, montant avant formule, code eto : " + rubriquePaie.getCode());
+                            System.out.println("equality : " + rubriquePaie.getCode().equalsIgnoreCase("IND_CONG"));
+                            if(rubriquePaie.getCode().equalsIgnoreCase("IND_CONG")){
+                                System.out.println("tafiditra ato lalalalalalalal++++++++++++++");
+                                MouvementSoldePaie mouvement = new MouvementSoldePaie();
+                                mouvement.setIdEmploye(paie.getEmploye().getId());
+                                mouvement.setIdPaie(paie.getId());
+                                mouvementSoldePaieService.createWithPaie(mouvement, existingPaieFille);
+                            }
+
+                            if(rubriquePaie.getFormule().getNombre() != null && rubriquePaie.getFormule().getTaux() != null){
+                                montant = montant * paieFilleDetails.getNombre().doubleValue() * paieFilleDetails.getTaux().doubleValue() / 100;
+                            }
+                            if(rubriquePaie.getFormule().getNombre() != null && rubriquePaie.getFormule().getTaux() == null){
+                                montant = montant * paieFilleDetails.getNombre().doubleValue();
+                                existingPaieFille.setNombre(BigDecimal.valueOf(paieFilleDetails.getNombre().doubleValue()));
+                            }
+                            if(rubriquePaie.getFormule().getTaux() != null && rubriquePaie.getFormule().getNombre() == null){
+                                montant = montant * paieFilleDetails.getTaux().doubleValue() / 100;
+                                existingPaieFille.setTaux(BigDecimal.valueOf(paieFilleDetails.getTaux().doubleValue()));
+                            }
+
+                            if(base.equalsIgnoreCase("SNET_IMP")){
+                                double sbrut_total = calculSalaireBrutTotal(paie.getId());
+                                double base_irsa = sbrut_total;
+                                List<PaieFille> les_paies_deductibles_irsa = paieFilleRepository.findDeductiblesIrsaByPaieId(paie.getId());
+                                for (PaieFille paieFille2 : les_paies_deductibles_irsa) {
+                                    base_irsa = base_irsa - paieFille2.getMontant().doubleValue();
+                                }
+                                existingPaieFille.setBase(BigDecimal.valueOf(base_irsa));
+                                montant = baseIrsaService.calculerIRSA(BigDecimal.valueOf(base_irsa)).doubleValue();
+                            }
+                            
+                        } else if ("CALCULE".equals(modeCalculStr)) {
+                            if(base.equalsIgnoreCase("SALAIRE_BASE")){
+                               existingPaieFille.setBase(BigDecimal.valueOf(salaire_base));
+                               montant = montant * salaire_base;
+                            }
+                            if(base.equalsIgnoreCase("SH")){
+                               montant = salaire_base / 173.33;
+                               existingPaieFille.setBase(BigDecimal.valueOf(salaire_base / 173.33));
+                            }
+                            if(base.equalsIgnoreCase("SJ")){
+                                montant = salaire_base/30;
+                                existingPaieFille.setBase(BigDecimal.valueOf(salaire_base/30));
+                            }
+                            if(base.equalsIgnoreCase("SBRUT")){
+                              for (PaieFille gain : les_gains) {
+                                fact = fact +  gain.getMontant().doubleValue();
+                              }
+                              montant = fact;
+                              existingPaieFille.setBase(BigDecimal.valueOf(fact));
+                            }
+
+                            if(rubriquePaie.getFormule().getNombre() != null){
+                                montant = montant * paieFilleDetails.getNombre().doubleValue();
+                                existingPaieFille.setNombre(paieFilleDetails.getNombre());
+                            }
+                            if(rubriquePaie.getFormule().getTaux() != null){
+                                montant = montant * paieFilleDetails.getTaux().doubleValue() / 100;
+                                existingPaieFille.setTaux(paieFilleDetails.getTaux());
+                            }
+                            
+                        } else if ("MANUEL".equals(modeCalculStr)) {
+                            montant = paieFilleDetails.getMontant().doubleValue();
+                        }
+                        
+                        existingPaieFille.setMontant(BigDecimal.valueOf(montant));
+                        
+                        return paieFilleRepository.save(existingPaieFille);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Erreur lors de la mise à jour de PaieFille: " + e.getMessage());
+                    }
                 })
                 .orElseThrow(() -> new RuntimeException("PaieFille non trouvée avec l'id: " + id));
     }
