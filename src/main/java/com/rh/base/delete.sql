@@ -1,0 +1,11 @@
+delete from document_employe; 
+delete from manager_employe;
+delete from manager;
+delete from token;
+delete from users; 
+delete from poste_employe;
+delete from departement_employe;
+delete from employe;
+delete from infos_professionnelles;
+delete from infos_administratives;  
+delete from emergency_contact; 
