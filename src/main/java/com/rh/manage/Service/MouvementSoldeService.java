@@ -77,7 +77,6 @@ public class MouvementSoldeService {
     }
     
     
-
     // ✅ CHAQUE MOIS (cron job automatique)
     
     
