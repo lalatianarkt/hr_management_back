@@ -5,6 +5,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.rh.manage.Dto.DepartementHierarchiqueDTO;
+import com.rh.manage.Dto.ManagerHierarchiqueDTO;
+import com.rh.manage.Model.InfosProfessionnelles;
 import com.rh.manage.Model.PaieFille;
 import com.rh.manage.Service.PaieFilleService;
 
@@ -158,7 +161,7 @@ public class PaieFilleController {
                 .body("Une erreur technique est survenue. Veuillez réessayer.");
         }
     }
-    
+
     @PutMapping("/{id}")
     public ResponseEntity<PaieFille> update(
             @PathVariable Long id, 

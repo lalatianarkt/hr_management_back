@@ -18,6 +18,9 @@ public class VueEmployeManagerComplet {
     
     @Column(name = "employe_prenom")
     private String employePrenom;
+
+    @Column(name = "id_employe")
+    private String idEmploye;
     
     @Column(name = "nom_complet")
     private String nomComplet;
@@ -175,5 +178,13 @@ public class VueEmployeManagerComplet {
                 ", nomNiveauManager='" + nomNiveauManager + '\'' +
                 ", rangPosteManager=" + rangPosteManager +
                 '}';
+    }
+
+    public String getIdEmploye() {
+        return idEmploye;
+    }
+
+    public void setIdEmploye(String idEmploye) {
+        this.idEmploye = idEmploye;
     }
 }

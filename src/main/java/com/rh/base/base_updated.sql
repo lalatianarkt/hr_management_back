@@ -1,12 +1,3 @@
-CREATE TABLE emergency_contact(
-   id VARCHAR(50) ,
-   contact VARCHAR(50) ,
-   email VARCHAR(50) ,
-   adresse VARCHAR(50) ,
-   created_at TIMESTAMP NOT NULL,
-   modified_at TIMESTAMP,
-   PRIMARY KEY(id)
-);
 
 -- CREATE TABLE infos_professionnelles(
 --    id VARCHAR(50) ,
@@ -15,7 +6,7 @@ CREATE TABLE emergency_contact(
 --    modified_at TIMESTAMP,
 --    id_manager VARCHAR(50) ,
 --    id_departement VARCHAR(50) ,
---    id_poste VARCHAR(50)  NOT NULL,
+--    id_poste VARCHAR(50)  NOT NULL,d
 --    id_type_contrat VARCHAR(50)  NOT NULL,
 --    id_employe VARCHAR(50)  NOT NULL,
 --    date_debut DATE NOT NULL,
@@ -59,6 +50,37 @@ ADD CONSTRAINT fk_region_id_region
 FOREIGN KEY (id_region)
 REFERENCES region(id);
 
+CREATE TABLE sexe(
+   id SERIAL,
+   sexe VARCHAR(50)  NOT NULL,
+   code VARCHAR(1) ,
+   PRIMARY KEY(id)
+);
+
+CREATE TABLE region(
+   id VARCHAR(50) ,
+   nom VARCHAR(255) ,
+   created_at TIMESTAMP NOT NULL,
+   modified_at TIMESTAMP,
+   PRIMARY KEY(id)
+);
+
+CREATE TABLE emergency_contact(
+   id VARCHAR(50) ,
+   contact VARCHAR(50) ,
+   email VARCHAR(50) ,
+   adresse VARCHAR(50) ,
+   created_at TIMESTAMP NOT NULL,
+   modified_at TIMESTAMP,
+   PRIMARY KEY(id)
+);
+
+CREATE TABLE nationalite(
+   id SERIAL,
+   nationalite VARCHAR(150)  NOT NULL,
+   PRIMARY KEY(id)
+);
+
 CREATE TABLE Employe(
    id VARCHAR(50) ,
    nom VARCHAR(100)  NOT NULL,
@@ -96,7 +118,61 @@ CREATE TABLE Employe(
    UNIQUE(cin)
 );
 
+CREATE TABLE Departement(
+   id VARCHAR(50) ,
+   nom VARCHAR(50)  NOT NULL,
+   description VARCHAR(100) ,
+   statut INTEGER,
+   created_at TIMESTAMP NOT NULL,
+   modified_at TIMESTAMP,
+   PRIMARY KEY(id)
+);
 
+CREATE TABLE manager(
+   id VARCHAR(50) ,
+   date_debut DATE NOT NULL,
+   date_fin DATE,
+   created_at TIMESTAMP NOT NULL,
+   modified_at VARCHAR(50) ,
+   statut INTEGER NOT NULL,
+   id_departement VARCHAR(50) ,
+   id_employe VARCHAR(50)  NOT NULL,
+   commentaire TEXT,
+   PRIMARY KEY(id),
+   FOREIGN KEY(id_departement) REFERENCES Departement(id),
+   FOREIGN KEY(id_employe) REFERENCES Employe(id)
+);
+
+CREATE TABLE Niveau_hierarchique(
+   id VARCHAR(50) ,
+   nom VARCHAR(150)  NOT NULL,
+   rang INTEGER NOT NULL,
+   description VARCHAR(255) ,
+   created_at TIMESTAMP NOT NULL,
+   modified_at TIMESTAMP,
+   PRIMARY KEY(id)
+);
+
+CREATE TABLE Poste(
+   id VARCHAR(50) ,
+   nom VARCHAR(100)  NOT NULL,
+   description VARCHAR(255) ,
+   created_at TIMESTAMP,
+   modified_at TIMESTAMP,
+   id_departement VARCHAR(50)  NOT NULL,
+   id_niveau VARCHAR(50) ,
+   PRIMARY KEY(id),
+   FOREIGN KEY(id_departement) REFERENCES Departement(id)
+   FOREIGN KEY(id_niveau) REFERENCES Niveau_hierarchique(id),
+);
+
+CREATE TABLE type_temps_travail(
+   id SERIAL,
+   temps_travail VARCHAR(50) ,
+   created_at TIMESTAMP NOT NULL,
+   modified_at TIMESTAMP,
+   PRIMARY KEY(id)
+);
 
 CREATE TABLE categorie_professionnelle(
    id VARCHAR(50) ,
@@ -115,6 +191,17 @@ CREATE TABLE type_entree(
    modified_at TIMESTAMP,
    PRIMARY KEY(id)
 );
+
+CREATE TABLE Type_contrat(
+   id VARCHAR(50) ,
+   intitule VARCHAR(50)  NOT NULL,
+   description VARCHAR(255) ,
+   duree_max_mois INTEGER NOT NULL,
+   created_at TIMESTAMP NOT NULL,
+   modified_at TIMESTAMP,
+   PRIMARY KEY(id)
+);
+
 
 CREATE TABLE infos_professionnelles(
    id VARCHAR(50) ,
@@ -148,14 +235,6 @@ CREATE TABLE infos_professionnelles(
    FOREIGN KEY(id_poste) REFERENCES Poste(id),
    FOREIGN KEY(id_type_contrat) REFERENCES Type_contrat(id),
    FOREIGN KEY(id_employe) REFERENCES Employe(id)
-);
-
-CREATE TABLE type_temps_travail(
-   id SERIAL,
-   temps_travail VARCHAR(50) ,
-   created_at TIMESTAMP NOT NULL,
-   modified_at TIMESTAMP,
-   PRIMARY KEY(id)
 );
 
 alter table infos_Professionnelles add column id_categorie VARCHAR(50);
@@ -335,13 +414,6 @@ CREATE TABLE periode_paie(
 -- ALTER TABLE employe
 -- ADD CONSTRAINT unique_num_cnaps UNIQUE (num_cnaps);
 
-CREATE TABLE sexe(
-   id SERIAL,
-   sexe VARCHAR(50)  NOT NULL,
-   code VARCHAR(1) ,
-   PRIMARY KEY(id)
-);
-
 CREATE TABLE type_user(
    id SERIAL,
    type VARCHAR(50)  NOT NULL,
@@ -356,13 +428,37 @@ CREATE TABLE Users(
    password VARCHAR(150)  NOT NULL,
    created_at TIMESTAMP NOT NULL,
    modified_at TIMESTAMP,
-   id_type_user INTEGER NOT NULL,
+   statut INTEGER,
    id_employe VARCHAR(50)  NOT NULL,
    PRIMARY KEY(id),
    UNIQUE(email),
-   FOREIGN KEY(id_type_user) REFERENCES type_user(id), --type ohatra hoe admin, ...
    FOREIGN KEY(id_employe) REFERENCES Employe(id)
 );
+
+CREATE TABLE user_role(
+   idUser VARCHAR(50) ,
+   id_type INTEGER,
+   created_at TIMESTAMP NOT NULL,
+   modified_at TIMESTAMP,
+   statut INTEGER,
+   PRIMARY KEY(idUser, id_type),
+   FOREIGN KEY(idUser) REFERENCES Users(id),
+   FOREIGN KEY(id_type) REFERENCES type_user(id)
+); 
+
+-- CREATE TABLE Users(
+--    id VARCHAR(50) ,
+--    email VARCHAR(150)  NOT NULL,
+--    password VARCHAR(150)  NOT NULL,
+--    created_at TIMESTAMP NOT NULL,
+--    modified_at TIMESTAMP,
+--    id_type_user INTEGER NOT NULL,
+--    id_employe VARCHAR(50)  NOT NULL,
+--    PRIMARY KEY(id),
+--    UNIQUE(email),
+--    FOREIGN KEY(id_type_user) REFERENCES type_user(id), --type ohatra hoe admin, ...
+--    FOREIGN KEY(id_employe) REFERENCES Employe(id)
+-- );
 
 -- ALTER TABLE Users
 -- ADD COLUMN statut INTEGER DEFAULT 0;
@@ -373,6 +469,16 @@ CREATE TABLE type_user(
    created_at TIMESTAMP NOT NULL,
    modified_at TIMESTAMP,
    PRIMARY KEY(id)
+);
+
+CREATE TABLE user_role(
+   id VARCHAR(50) ,
+   id_1 INTEGER,
+   created_at TIMESTAMP NOT NULL,
+   modified_at TIMESTAMP,
+   PRIMARY KEY(id, id_type),
+   FOREIGN KEY(id) REFERENCES Users(id),
+   FOREIGN KEY(id_type) REFERENCES type_user(id)
 );
 
 CREATE TABLE Token(
@@ -406,29 +512,6 @@ CREATE TABLE Document_employe(
    FOREIGN KEY(id_employe) REFERENCES Employe(id)
 );  
 
-CREATE TABLE Niveau_hierarchique(
-   id VARCHAR(50) ,
-   nom VARCHAR(150)  NOT NULL,
-   rang INTEGER NOT NULL,
-   description VARCHAR(255) ,
-   created_at TIMESTAMP NOT NULL,
-   modified_at TIMESTAMP,
-   PRIMARY KEY(id)
-);
-
-CREATE TABLE Poste(
-   id VARCHAR(50) ,
-   nom VARCHAR(100)  NOT NULL,
-   description VARCHAR(255) ,
-   created_at TIMESTAMP,
-   modified_at TIMESTAMP,
-   id_departement VARCHAR(50)  NOT NULL,
-   id_niveau VARCHAR(50) ,
-   PRIMARY KEY(id),
-   FOREIGN KEY(id_departement) REFERENCES Departement(id)
-   FOREIGN KEY(id_niveau) REFERENCES Niveau_hierarchique(id),
-);
-
 ALTER TABLE Poste 
 ADD COLUMN id_niveau VARCHAR(50);
 
@@ -436,15 +519,6 @@ ALTER TABLE Poste
 ADD CONSTRAINT fk_poste_niveau
 FOREIGN KEY (id_niveau) REFERENCES Niveau_hierarchique(id);
 
-CREATE TABLE Type_contrat(
-   id VARCHAR(50) ,
-   intitule VARCHAR(50)  NOT NULL,
-   description VARCHAR(255) ,
-   duree_max_mois INTEGER NOT NULL,
-   created_at TIMESTAMP NOT NULL,
-   modified_at TIMESTAMP,
-   PRIMARY KEY(id)
-);
 
 -- alter table infos_Professionnelles drop column date_fin;
 -- alter table Type_contrat add column duree_max_mois integer not null default 6;
@@ -472,38 +546,8 @@ CREATE TABLE situation_familiale(
    PRIMARY KEY(id)
 );
 
-CREATE TABLE Departement(
-   id VARCHAR(50) ,
-   nom VARCHAR(50)  NOT NULL,
-   description VARCHAR(100) ,
-   statut INTEGER,
-   created_at TIMESTAMP NOT NULL,
-   modified_at TIMESTAMP,
-   PRIMARY KEY(id)
-);
 
 alter table departement add column statut integer default 0;
-
-CREATE TABLE nationalite(
-   id SERIAL,
-   nationalite VARCHAR(150)  NOT NULL,
-   PRIMARY KEY(id)
-);
-
-CREATE TABLE manager(
-   id VARCHAR(50) ,
-   date_debut DATE NOT NULL,
-   date_fin DATE,
-   created_at TIMESTAMP NOT NULL,
-   modified_at VARCHAR(50) ,
-   statut INTEGER NOT NULL,
-   id_departement VARCHAR(50) ,
-   id_employe VARCHAR(50)  NOT NULL,
-   commentaire TEXT,
-   PRIMARY KEY(id),
-   FOREIGN KEY(id_departement) REFERENCES Departement(id),
-   FOREIGN KEY(id_employe) REFERENCES Employe(id)
-);
 
 alter table manager add column commentaire text;
 alter table manager add column id_departement VARCHAR(50);
@@ -831,8 +875,31 @@ CREATE TABLE mouvement_solde (
     commentaire VARCHAR(255),
     type_mouvement VARCHAR(50) NOT NULL,
     id_employe VARCHAR(50) NOT NULL,
-    FOREIGN KEY(id_employe) REFERENCES employe(id)
+    id_demande_conge VARCHAR(50),
+    FOREIGN KEY(id_employe) REFERENCES employe(id),
+    FOREIGN KEY(id_demande_conge) REFERENCES Demande_conge(id),
 );
+
+CREATE TABLE mouvement_solde(
+   id SERIAL,
+   nb_conge_total NUMERIC(10,2)   NOT NULL,
+   nb_conge_restant NUMERIC(10,2)   NOT NULL,
+   nb_conge_pris NUMERIC(10,2)   NOT NULL,
+   mois INTEGER NOT NULL,
+   annee INTEGER NOT NULL,
+   created_at TIMESTAMP NOT NULL,
+   modified_at TIMESTAMP,
+   statut INTEGER NOT NULL,
+   commentaire VARCHAR(255) ,
+   type_mouvement VARCHAR(50) ,
+   is_cloture BOOLEAN,
+   id_1 VARCHAR(50) ,
+   id_2 VARCHAR(50)  NOT NULL,
+   PRIMARY KEY(id),
+   FOREIGN KEY(id_1) REFERENCES Demande_conge(id),
+   FOREIGN KEY(id_2) REFERENCES Employe(id)
+);
+
 
 -- ALTER TABLE mouvement_solde 
 -- ALTER COLUMN type_mouvement TYPE VARCHAR(50) USING type_mouvement_enum::text;

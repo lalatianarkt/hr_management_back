@@ -109,6 +109,7 @@ CREATE TABLE regle_gestion_conges(
    allocation_familiale NUMERIC(10,2)  ,
    jour_paiement_max INTEGER,
    jour_paiement_min INTEGER,
+   duree_annee_report INTEGER,
    PRIMARY KEY(id)
 );
 
@@ -442,12 +443,11 @@ CREATE TABLE Users(
    password VARCHAR(150)  NOT NULL,
    created_at TIMESTAMP NOT NULL,
    modified_at TIMESTAMP,
-   id_1 INTEGER NOT NULL,
-   id_2 VARCHAR(50)  NOT NULL,
+   statut INTEGER,
+   id_1 VARCHAR(50)  NOT NULL,
    PRIMARY KEY(id),
    UNIQUE(email),
-   FOREIGN KEY(id_1) REFERENCES type_user(id),
-   FOREIGN KEY(id_2) REFERENCES Employe(id)
+   FOREIGN KEY(id_1) REFERENCES Employe(id)
 );
 
 CREATE TABLE Token(
@@ -522,9 +522,11 @@ CREATE TABLE Solde_annuel(
    statut_cloture INTEGER,
    created_at TIMESTAMP NOT NULL,
    modified_at TIMESTAMP,
-   id_1 VARCHAR(50) ,
+   id_1 INTEGER,
+   id_2 VARCHAR(50) ,
    PRIMARY KEY(id),
-   FOREIGN KEY(id_1) REFERENCES Employe(id)
+   FOREIGN KEY(id_1) REFERENCES regle_gestion_conges(id),
+   FOREIGN KEY(id_2) REFERENCES Employe(id)
 );
 
 CREATE TABLE Pointage(
@@ -748,4 +750,35 @@ CREATE TABLE paie_fille(
    PRIMARY KEY(id),
    FOREIGN KEY(id_1) REFERENCES paie(id),
    FOREIGN KEY(id_2) REFERENCES rubrique_paie(id)
+);
+
+CREATE TABLE mouvement_solde(
+   id SERIAL,
+   nb_conge_total NUMERIC(10,2)   NOT NULL,
+   nb_conge_restant NUMERIC(10,2)   NOT NULL,
+   nb_conge_pris NUMERIC(10,2)   NOT NULL,
+   mois INTEGER NOT NULL,
+   annee INTEGER NOT NULL,
+   created_at TIMESTAMP NOT NULL,
+   modified_at TIMESTAMP,
+   statut INTEGER NOT NULL,
+   commentaire VARCHAR(255) ,
+   type_mouvement VARCHAR(50) ,
+   is_cloture BOOLEAN,
+   id_1 VARCHAR(50) ,
+   id_2 VARCHAR(50)  NOT NULL,
+   PRIMARY KEY(id),
+   FOREIGN KEY(id_1) REFERENCES Demande_conge(id),
+   FOREIGN KEY(id_2) REFERENCES Employe(id)
+);
+
+CREATE TABLE user_role(
+   id VARCHAR(50) ,
+   id_1 INTEGER,
+   created_at TIMESTAMP NOT NULL,
+   modified_at TIMESTAMP,
+   statut INTEGER,
+   PRIMARY KEY(id, id_1),
+   FOREIGN KEY(id) REFERENCES Users(id),
+   FOREIGN KEY(id_1) REFERENCES type_user(id)
 );

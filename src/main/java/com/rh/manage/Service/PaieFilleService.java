@@ -479,8 +479,4 @@ public class PaieFilleService {
         
         paieFille.setMontant(montant);
     }
-    
-    private String generateId() {
-        return "PF-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-    }
 }

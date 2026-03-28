@@ -99,6 +99,14 @@ public interface MouvementSoldeRepository extends JpaRepository<MouvementSolde, 
     
     // Nouvelle méthode pour vérifier l'existence
     boolean existsByEmployeAndMoisAndAnnee(Employe employe, int mois, int annee);
+
+    boolean existsByEmployeAndMoisAndAnneeAndTypeMouvementAndStatut(
+            Employe employe,
+            int mois,
+            int annee,
+            TypeEnumConge typeMouvement,
+            Integer statut
+    );
     
     // Pour trouver par employe, mois et année
     Optional<MouvementSolde> findByEmployeAndMoisAndAnnee(Employe employe, int mois, int annee);

@@ -6,6 +6,8 @@ import java.util.Date;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.stereotype.Service;
 
+import com.rh.manage.Model.InfosProfessionnelles;
+import com.rh.manage.Model.TypeUser;
 import com.rh.manage.Model.User;
 
 import io.jsonwebtoken.security.Keys;
@@ -18,14 +20,26 @@ public class JwtService {
     private static final String SECRET_KEY =
             "ma-cle-super-secrete-pour-le-jwt-qui-doit-etre-longue";
 
+    private final UserRoleService userRoleService;
+
+    public JwtService(UserRoleService userRoleService) {
+        this.userRoleService = userRoleService;
+    }
+
     private Key getSignKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
     }
 
-    public String generateToken(User user) {
+    public String generateToken(User user, InfosProfessionnelles infosPro) {
+        TypeUser typeUser = user.getTypeUser();
+        if (typeUser == null) {
+            typeUser = userRoleService.getPrimaryRoleForUser(user.getId());
+        }
+        String role = typeUser != null ? typeUser.getType() : "Employe";
+
         return Jwts.builder()
                 .setSubject(user.getId().toString())
-                .claim("role", user.getTypeUser().getType())
+                .claim("role", role)
                 .claim("idEmploye", user.getEmploye().getId())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 7200000)) // 2h
@@ -42,4 +56,3 @@ public class JwtService {
                 .getBody();
     }
 }
-

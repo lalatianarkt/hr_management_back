@@ -1,10 +1,13 @@
 package com.rh.manage.Controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.rh.manage.Model.Employe;
 import com.rh.manage.Model.SoldeAnnuel;
+import com.rh.manage.Service.EmployeService;
 import com.rh.manage.Service.SoldeAnnuelService;
 
 import java.time.LocalDate;
@@ -12,15 +15,14 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-
 
 @RestController
 @RequestMapping("/api/solde-annuel")
 public class SoldeAnnuelController {
 
     private final SoldeAnnuelService service;
+    @Autowired
+    EmployeService employeService;
 
     public SoldeAnnuelController(SoldeAnnuelService service) {
         this.service = service;
@@ -40,16 +42,23 @@ public class SoldeAnnuelController {
 
     @GetMapping("/employe/{idEmploye}")
     public List<SoldeAnnuel> getByEmploye(@PathVariable String idEmploye) {
-        return service.getSoldeByEmploye(idEmploye);
+        return employeService.getById(idEmploye)
+                .map(service::getSoldeByEmploye)
+                .orElse(List.of());
     }
 
-    @PostMapping("/cloture/emp/{employe}")
-    public String clotureParEmp(@RequestBody String entity) {
-        //TODO: process POST request
-        
-        return entity;
+    @PostMapping("/cloture/employe/{idEmploye}/annee/{annee}")
+    public ResponseEntity<?> clotureParEmp(@PathVariable String idEmploye, @PathVariable int annee) {
+        try {
+            Employe employe = employeService.getById(idEmploye).get();
+            SoldeAnnuel soldeAnnuel = service.reporterCongeAnnuel(employe, annee);
+            return ResponseEntity.ok(soldeAnnuel);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erreur lors de la clôture pour l'employé " + idEmploye + " et l'année " + annee + ": " + e.getMessage());
+        }
     }
-    
 
     @PostMapping("/cloture/globale/{annee}")
     public ResponseEntity<?> clotureGlobale(@PathVariable int annee) {
@@ -135,7 +144,8 @@ public class SoldeAnnuelController {
             int maxAfficher = Math.min(soldes.size(), 3);
             for (int i = 0; i < maxAfficher; i++) {
                 SoldeAnnuel solde = soldes.get(i);
-                System.out.println("   " + (i+1) + ". " + solde.getIdEmploye() + 
+                String employeId = solde.getEmploye() != null ? solde.getEmploye().getId() : "null";
+                System.out.println("   " + (i+1) + ". " + employeId + 
                                  " - Total: " + solde.getNbCongeTotal() + 
                                  ", Pris: " + solde.getNbCongePris());
             }
@@ -201,4 +211,3 @@ public class SoldeAnnuelController {
         }
     }
 }
-

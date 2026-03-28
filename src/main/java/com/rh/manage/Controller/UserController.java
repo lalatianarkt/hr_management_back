@@ -1,6 +1,7 @@
 package com.rh.manage.Controller;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -9,15 +10,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.rh.manage.Dto.UserDecisionRequest;
+import com.rh.manage.Dto.UserListDTO;
+import com.rh.manage.Dto.UserRequest;
 import com.rh.manage.Model.Employe;
 import com.rh.manage.Model.Token;
 import com.rh.manage.Model.User;
+import com.rh.manage.Model.UserRole;
 import com.rh.manage.Service.EmailService;
 import com.rh.manage.Service.EmployeService;
 import com.rh.manage.Service.TokenService;
 import com.rh.manage.Service.UserService;
 import com.rh.manage.Service.UserService.AuthenticationException;
 import com.rh.manage.Service.UserService.ResourceNotFoundException;
+
 
 
 @RestController
@@ -105,6 +111,38 @@ public class UserController {
         }
     }
 
+    @PostMapping("/all")
+    public ResponseEntity<?> registerAll(@RequestBody List<UserRole> users) {
+        try {
+            
+            if (users == null || users.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("La liste des utilisateurs est vide");
+            }
+
+            for (UserRole user : users) {
+                if (user.getUser().getEmail() == null || user.getUser().getEmail().isEmpty()) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Email obligatoire pour chaque utilisateur");
+                }
+
+                if (user.getUser().getPassword() == null || user.getUser().getPassword().isEmpty()) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Mot de passe obligatoire pour chaque utilisateur");
+                }
+                userService.save(user.getUser());
+                userService.registerUserRole(user);
+            }
+
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body("Utilisateurs cr\u00e9\u00e9s avec succ\u00e8s");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erreur lors de l'inscription en lot : " + e.getMessage());
+        }
+    }
+    
     @PostMapping
     public ResponseEntity<String> register(@RequestBody User user) {
         try {
@@ -118,7 +156,7 @@ public class UserController {
                         .body("Mot de passe obligatoire");
             }
 
-            // userService.registerUser(user);
+            userService.registerUser(user);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body("Utilisateur créé avec succès");
         } catch (Exception e) {
@@ -128,9 +166,43 @@ public class UserController {
         }
     }
 
-    @PostMapping("/auth")
-    public ResponseEntity<?> authenticate(@RequestBody User userRequest) {
-        try {
+    @PostMapping("path")
+    public String postMethodName(@RequestBody String entity) {
+        //TODO: process POST request
+        
+        return entity;
+    }
+    
+
+    // @PostMapping("/auth")
+    // public ResponseEntity<?> authenticate(@RequestBody UserRequest userRequest) {
+    //     try { 
+    //         Map<String, Object> authResponse = userService.authenticateUser(userRequest);
+    //         return ResponseEntity.ok(authResponse);
+            
+    //     } catch (AuthenticationException e) {
+    //         return ResponseEntity.status(401).body(Map.of(
+    //             "status", 401,
+    //             "message", e.getMessage()
+    //         ));
+            
+    //     } catch (ResourceNotFoundException e) {
+    //         return ResponseEntity.status(404).body(Map.of(
+    //             "status", 404,
+    //             "message", e.getMessage()
+    //         ));
+            
+    //     } catch (Exception e) {
+    //         e.printStackTrace();
+    //         return ResponseEntity.status(500).body(Map.of(
+    //             "status", 500,
+    //             "message", e.getMessage()
+    //         ));
+    //     }
+    // }
+
+    public ResponseEntity<?> authenticate(@RequestBody UserRequest userRequest) {
+        try { 
             Map<String, Object> authResponse = userService.authenticateUser(userRequest);
             return ResponseEntity.ok(authResponse);
             
@@ -151,6 +223,67 @@ public class UserController {
             return ResponseEntity.status(500).body(Map.of(
                 "status", 500,
                 "message", e.getMessage()
+            ));
+        }
+    }
+
+    // Endpoint 2: Sélection du rôle (pour les utilisateurs multi-rôles)
+    @PostMapping("/select-role")
+    public ResponseEntity<?> selectRole(@RequestBody UserRole roleSelectionRequest) {
+        try {
+            Map<String, Object> response = userService.selectUserRole(
+                roleSelectionRequest.getUser().getId(), 
+                roleSelectionRequest.getTypeUser().getType()
+            );
+            return ResponseEntity.ok(response);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(404).body(Map.of(
+                "status", 404,
+                "message", e.getMessage()
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                "status", 500,
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    @GetMapping("/admin/list")
+    public ResponseEntity<?> getAdminUserList() {
+        try {
+            List<UserListDTO> users = userService.getAllUsersForAdminList();
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", 500,
+                "message", "Erreur lors de la récupération des utilisateurs : " + e.getMessage()
+            ));
+        }
+    }
+
+    @PatchMapping("/{id}/statut")
+    public ResponseEntity<?> updateUserStatut(@PathVariable String id, @RequestBody UserDecisionRequest request) {
+        try {
+            User updatedUser = userService.updateUserStatut(id, request.getStatut());
+            return ResponseEntity.ok(Map.of(
+                "status", 200,
+                "message", "Statut utilisateur mis à jour avec succès",
+                "userId", updatedUser.getId(),
+                "statut", updatedUser.getStatut()
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                "status", 400,
+                "message", e.getMessage()
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", 500,
+                "message", "Erreur lors de la mise à jour du statut : " + e.getMessage()
             ));
         }
     }

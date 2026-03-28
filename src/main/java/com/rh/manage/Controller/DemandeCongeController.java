@@ -430,8 +430,7 @@ public class DemandeCongeController {
 
     @PutMapping("/{id}")
     public ResponseEntity<DemandeConge> update(@PathVariable String id, @RequestBody DemandeConge demande) {
-        demande.setId(id);
-        return ResponseEntity.ok(service.save(demande));
+        return ResponseEntity.ok(service.updateFromExisting(id, demande));
     }
 
     @DeleteMapping("/{id}")

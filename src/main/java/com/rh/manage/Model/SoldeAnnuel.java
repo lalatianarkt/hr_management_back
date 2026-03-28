@@ -1,5 +1,6 @@
 package com.rh.manage.Model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -12,7 +13,7 @@ import java.util.UUID;
 public class SoldeAnnuel {
 
     @Id
-    private String id;  // UUID ou autre identifiant externe
+    private String id;  
 
     @Column(name = "nb_conge_total")
     private Double nbCongeTotal;
@@ -38,8 +39,10 @@ public class SoldeAnnuel {
     @Column(name = "modified_at")
     private LocalDateTime modifiedAt;
 
-    @Column(name = "id_employe")
-    private String idEmploye;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JoinColumn(name = "id_employe", referencedColumnName = "id")
+    private Employe employe;
 
     // ======== Constructeur ========
     public SoldeAnnuel() {
@@ -68,12 +71,10 @@ public class SoldeAnnuel {
             // Ex: SOL-251216-1031-527 → 20 caractères
         }
         
-        // Définir la date de création si null
         if (this.createdAt == null) {
             this.createdAt = LocalDateTime.now();
         }
         
-        // Pour les nouvelles entités, modified_at = created_at
         if (this.modifiedAt == null) {
             this.modifiedAt = this.createdAt;
         }
@@ -107,7 +108,6 @@ public class SoldeAnnuel {
     public LocalDateTime getModifiedAt() { return modifiedAt; }
     public void setModifiedAt(LocalDateTime modifiedAt) { this.modifiedAt = modifiedAt; }
 
-    public String getIdEmploye() { return idEmploye; }
-    public void setIdEmploye(String idEmploye) { this.idEmploye = idEmploye; }
+    public Employe getEmploye() { return employe; }
+    public void setEmploye(Employe employe) { this.employe = employe; }
 }
-

@@ -28,18 +28,18 @@ public interface VueEmployeManagerCompletRepository extends JpaRepository<VueEmp
     List<VueEmployeManagerComplet> findByNomPoste(String poste);
     
     // Trouver les employés sans manager
-    @Query("SELECT v FROM VueEmployeManagerComplet v WHERE v.nomCompletManager IS NULL OR v.nomCompletManager = ''")
-    List<VueEmployeManagerComplet> findEmployesSansManager();
+    // @Query("SELECT v FROM VueEmployeManagerComplet v WHERE v.nomCompletManager IS NULL OR v.nomCompletManager = ''")
+    // List<VueEmployeManagerComplet> findEmployesSansManager();
     
     // Hiérarchie par manager (regroupement)
-    @Query("SELECT v.nomCompletManager, v.nomPosteManager, v.rangPosteManager, COUNT(v) as nbSubordonnes " +
-           "FROM VueEmployeManagerComplet v " +
-           "WHERE v.nomCompletManager IS NOT NULL " +
-           "GROUP BY v.nomCompletManager, v.nomPosteManager, v.rangPosteManager " +
-           "ORDER BY v.rangPosteManager DESC")
-    List<Object[]> findHierarchieParManager();
+    // @Query("SELECT v.nomCompletManager, v.nomPosteManager, v.rangPosteManager, COUNT(v) as nbSubordonnes " +
+    //        "FROM VueEmployeManagerComplet v " +
+    //        "WHERE v.nomCompletManager IS NOT NULL " +
+    //        "GROUP BY v.nomCompletManager, v.nomPosteManager, v.rangPosteManager " +
+    //        "ORDER BY v.rangPosteManager DESC")
+    // List<Object[]> findHierarchieParManager();
     
-    // Trouver par écart de rang
-    @Query("SELECT v FROM VueEmployeManagerComplet v WHERE (v.rangPosteManager - v.rang) >= :ecartMin")
-    List<VueEmployeManagerComplet> findByEcartRangMinimum(Integer ecartMin);
+    // // Trouver par écart de rang
+    // @Query("SELECT v FROM VueEmployeManagerComplet v WHERE (v.rangPosteManager - v.rang) >= :ecartMin")
+    // List<VueEmployeManagerComplet> findByEcartRangMinimum(Integer ecartMin);
 }

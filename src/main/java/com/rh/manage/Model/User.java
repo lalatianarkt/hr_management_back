@@ -1,7 +1,9 @@
 package com.rh.manage.Model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -26,10 +28,13 @@ public class User {
     @Column(name = "statut")
     private Integer statut = 0; // 0 = en attente, 1 = actif
     
-    // 🔗 Relation Many-to-One avec TypeUser
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_type_user", referencedColumnName = "id", nullable = false)
+    @Transient
     private TypeUser typeUser;
+
+    @OneToMany(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JoinColumn(name = "idUser", referencedColumnName = "id")
+    private List<UserRole> userRoles;
     
     // 🔗 Relation One-to-One avec Employe
     @ManyToOne(fetch = FetchType.LAZY)
@@ -100,7 +105,17 @@ public class User {
     }
 
     public TypeUser getTypeUser() {
-        return typeUser;
+        if (typeUser != null) {
+            return typeUser;
+        }
+        if (userRoles != null) {
+            for (UserRole role : userRoles) {
+                if (role != null && role.getTypeUser() != null) {
+                    return role.getTypeUser();
+                }
+            }
+        }
+        return null;
     }
 
     public void setTypeUser(TypeUser typeUser) {
@@ -113,6 +128,14 @@ public class User {
 
     public void setEmploye(Employe employe) {
         this.employe = employe;
+    }
+
+    public List<UserRole> getUserRoles() {
+        return userRoles;
+    }
+
+    public void setUserRoles(List<UserRole> userRoles) {
+        this.userRoles = userRoles;
     }
 
      // --- Callbacks automatiques ---
@@ -139,7 +162,7 @@ public class User {
                 "id='" + id + '\'' +
                 ", email='" + email + '\'' +
                 ", statut=" + statut +
-                ", typeUser=" + (typeUser != null ? typeUser.getType() : "null") +
+                ", typeUser=" + (getTypeUser() != null ? getTypeUser().getType() : "null") +
                 ", employe=" + (employe != null ? employe.getNom() : "null") +
                 ", createdAt=" + createdAt +
                 ", modifiedAt=" + modifiedAt +

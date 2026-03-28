@@ -10,12 +10,14 @@ import com.rh.manage.Model.Employe;
 import com.rh.manage.Model.InfosProfessionnelles;
 import com.rh.manage.Model.Manager;
 import com.rh.manage.Model.Token;
+import com.rh.manage.Model.TypeUser;
 import com.rh.manage.Model.User;
 // import com.rh.manage.Model.ManagerEmploye;
 import com.rh.manage.Repository.DepartementManagerRepository;
 import com.rh.manage.Repository.DepartementRepository;
 import com.rh.manage.Repository.InfosProfessionnellesRepository;
 import com.rh.manage.Repository.ManagerRepository;
+import com.rh.manage.Repository.TypeUserRepository;
 import com.rh.manage.Repository.UserRepository;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -55,6 +57,12 @@ public class ManagerService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private TypeUserRepository typeUserRepository;
+
+    @Autowired
+    private UserRoleService userRoleService;
+
     public Boolean isManager(Employe employe){
         if(managerRepository.findByEmployeId(employe.getId()).isPresent()){
             return true;
@@ -63,13 +71,14 @@ public class ManagerService {
     }
 
     @Transactional
-    public Manager affecter(Manager manager) throws Exception {
+    public Manager affecter(Manager manager, String userId) throws Exception {
         System.out.println("dateDebut : " + manager.getDateDebut());
         System.out.println("commentaite : " + manager.getCommentaire());
         System.out.println("ndriiii : ");
         List<InfosProfessionnelles> les_infos_pro = infosProfessionnellesService.findAllEmpActiveByIdDepartement
         (manager.getDepartement().getId());
-
+        Optional<User> userActuel = userRepository.findById(userId);
+        TypeUser typeUserManager =  typeUserRepository.findByType("Manager");
         if(findManagerActuelByDepartement(manager.getDepartement().getId()) == null){
             Manager managerInserted = managerRepository.save(manager);
             List<InfosProfessionnelles> les_infos_to_update = new ArrayList<>();
@@ -82,6 +91,11 @@ public class ManagerService {
                 }
                 infosProfessionnellesRepository.saveAll(les_infos_to_update);
             }
+            if(userActuel.isPresent()){
+                if(!userRoleService.hasRole(userActuel.get().getId(), "Manager")){
+                    userRoleService.assignRole(userActuel.get().getId(), typeUserManager);
+                }
+            }
         } else{
             throw new Exception("Un manager existe déja pour ce département");
         }
@@ -92,7 +106,7 @@ public class ManagerService {
         User managerUser = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-        if (!"Manager".equalsIgnoreCase(managerUser.getTypeUser().getType())) {
+        if (!userRoleService.hasRole(managerUser.getId(), "Manager")) {
             throw new RuntimeException("Accès réservé aux managers");
         }
 
@@ -151,11 +165,10 @@ public class ManagerService {
         }
         
         // 6. Vérifier que c'est bien un manager (optionnel mais recommandé)
-        if (managerActuel.getTypeUser() == null || 
-            !"Manager".equals(managerActuel.getTypeUser().getType())) {
+        if (!userRoleService.hasRole(managerActuel.getId(), "Manager")) {
             throw new RuntimeException("Accès réservé aux managers");
         }
-        System.out.println("tena manager ve izy e ? " + managerActuel.getTypeUser());
+        System.out.println("tena manager ve izy e ? " + userRoleService.hasRole(managerActuel.getId(), "Manager"));
         
         // 7. Vérifier que l'utilisateur a un employé associé
         if (managerActuel.getEmploye() == null) {

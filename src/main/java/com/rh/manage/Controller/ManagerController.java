@@ -3,6 +3,7 @@ package com.rh.manage.Controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.rh.manage.Dto.ManagerDTO;
@@ -142,10 +143,28 @@ public class ManagerController {
 
     // POST /api/managers
     @PostMapping
-    public ResponseEntity<?> createManager(@RequestBody Manager manager, @RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<?> createManager(@RequestBody Manager manager, Authentication authentication) {
         try {
-            tokenService.validateToken(authHeader);
-            return ResponseEntity.ok(managerService.affecter(manager));      
+            if (authentication == null || authentication.getPrincipal() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of(
+                        "status", 401,
+                        "message", "Utilisateur non authentifié",
+                        "error", "UNAUTHENTICATED"
+                    ));
+            }
+        
+            String userId = (String) authentication.getPrincipal();
+        
+            if (userId == null || userId.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of(
+                            "status", 401,
+                            "message", "ID utilisateur invalide",
+                            "error", "INVALID_PRINCIPAL"
+                        ));
+            }
+            return ResponseEntity.ok(managerService.affecter(manager, userId));      
         } catch(TokenException e){
             return ResponseEntity.status(401).body(e.getMessage());
         } catch (Exception e) {

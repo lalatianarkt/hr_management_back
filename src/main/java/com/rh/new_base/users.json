@@ -1,0 +1,454 @@
+{
+  "userRole": [
+    {
+      "user": {
+        "id": "USR001",
+        "email": "jean.rakoto@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP001" }
+      },
+      "typeUser": [{ "id": 4 }]
+    },
+    {
+      "user": {
+        "id": "USR002",
+        "email": "voahangy.randria@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP005" }
+      },
+      "typeUser": [{ "id": 1 }, { "id": 2 }]
+    },
+    {
+      "user": {
+        "id": "USR003",
+        "email": "haja.rakotoarisoa@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP012" }
+      },
+      "typeUser": [{ "id": 4 }, { "id": 2 }]
+    },
+    {
+      "user": {
+        "id": "USR004",
+        "email": "hery.ravelo@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP022" }
+      },
+      "typeUser": [{ "id": 2 }]
+    },
+    {
+      "user": {
+        "id": "USR005",
+        "email": "heriniaina.rasendra@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP041" }
+      },
+      "typeUser": [{ "id": 2 }]
+    },
+    {
+      "user": {
+        "id": "USR006",
+        "email": "hasina.rakotobe@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP015" }
+      },
+      "typeUser": [{ "id": 2 }]
+    },
+    {
+      "user": {
+        "id": "USR007",
+        "email": "mamy.razafindrainibe@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP029" }
+      },
+      "typeUser": [{ "id": 2 }]
+    },
+    {
+      "user": {
+        "id": "USR008",
+        "email": "toky.razafindrakoto@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP036" }
+      },
+      "typeUser": [{ "id": 4 }]
+    },
+    {
+      "user": {
+        "id": "USR009",
+        "email": "mampionona.rakotomalala@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP008" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR010",
+        "email": "tiana.razafy@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP006" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR011",
+        "email": "nantenaina.ramanantsoa@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP007" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR012",
+        "email": "faly.andrianirina@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP003" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR013",
+        "email": "lova.ranaivo@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP011" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR014",
+        "email": "sarobidy.rakotozafy@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP025" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR015",
+        "email": "tahiana.randrianarivelo@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP028" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR016",
+        "email": "mahery.andriamanantena@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP026" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR017",
+        "email": "faniry.randrianarisoa@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP010" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR018",
+        "email": "andry.rakotondrabe@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP024" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR019",
+        "email": "mirana.razakamanana@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP044" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR020",
+        "email": "lalaina.randrianjafy@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP059" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR021",
+        "email": "njaka.rakotondramboa@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP019" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR022",
+        "email": "tovo.randrianasolo@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP090" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR023",
+        "email": "miora.rakotozafy@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP091" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR024",
+        "email": "nirina.randriamampandry@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP014" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR025",
+        "email": "tojo.rakotondrasoa@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP009" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR026",
+        "email": "mendrika.ranaivoson@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP027" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR027",
+        "email": "vololona.razafiarison@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP020" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR028",
+        "email": "rija.razafindralambo@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP047" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR029",
+        "email": "hary.rakotovololona@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP048" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR030",
+        "email": "tsiry.randriamboavonjy@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP049" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR031",
+        "email": "tefy.razafimandimby@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP051" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR032",
+        "email": "sitraka.ramanandraibe@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP052" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR033",
+        "email": "nyhasina.rakotomena@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP053" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR034",
+        "email": "fano.randriatahina@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP054" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR035",
+        "email": "faneva.ravelonarivo@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP055" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR036",
+        "email": "anjara.andriatiana@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP056" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR037",
+        "email": "tsinjo.rakotondramanan@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP057" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR038",
+        "email": "tina.razafindrasoa@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP058" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR039",
+        "email": "tahiry.rakotovao@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP060" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR040",
+        "email": "jery.ravelojaona@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP061" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR041",
+        "email": "mampionona.rakotondrasoa@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP062" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR042",
+        "email": "hery.razafimanantsoa@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP063" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR043",
+        "email": "miaro.randriamahazo@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP064" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR044",
+        "email": "nandrasana.rakotomalala@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP065" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR045",
+        "email": "tiavina.rakotozandry@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP066" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR046",
+        "email": "manoa.randrianantenaina@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP067" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR047",
+        "email": "fanilo.razafindrazaka@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP068" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR048",
+        "email": "nyavo.rakotondratsimba@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP069" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR049",
+        "email": "miora.ranaivomanana@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP070" }
+      },
+      "typeUser": [{ "id": 3 }]
+    },
+    {
+      "user": {
+        "id": "USR050",
+        "email": "tiana.andriamananony@gmail.com",
+        "statut": 1,
+        "employe": { "id": "EMP071" }
+      },
+      "typeUser": [{ "id": 3 }]
+    }
+  ]
+}

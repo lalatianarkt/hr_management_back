@@ -38,10 +38,14 @@ public class RegleGestionCongesController {
     @PutMapping("/{id}")
     public ResponseEntity<RegleGestionConges> update(@PathVariable int id, @RequestBody RegleGestionConges regle) {
         try {
-            RegleGestionConges updated = service.update(id, regle); // appelle le service qui fait l'update
+            RegleGestionConges updated = service.update(id, regle); 
             return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build(); // si l'entité n'existe pas
+            e.printStackTrace();
+            return ResponseEntity.notFound().build(); 
+        } catch(Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).build(); 
         }
     }
 

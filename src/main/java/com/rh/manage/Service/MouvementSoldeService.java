@@ -5,12 +5,14 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.rh.manage.Model.DemandeConge;
 import com.rh.manage.Model.Employe;
 import com.rh.manage.Model.InfosProfessionnelles;
 import com.rh.manage.Model.MouvementSolde;
 import com.rh.manage.Model.PeriodePaie;
 import com.rh.manage.Model.RegleGestionConges;
 import com.rh.manage.Model.TypeEnumConge;
+import com.rh.manage.Repository.DemandeCongeRepository;
 import com.rh.manage.Repository.MouvementSoldeRepository;
 import com.rh.manage.Repository.PeriodePaieRepository;
 
@@ -37,6 +39,9 @@ public class MouvementSoldeService {
 
     @Autowired
     PeriodePaieRepository periodePaieRepository;
+
+    @Autowired
+    DemandeCongeRepository demandeCongeRepository;
 
     private final MouvementSoldeRepository repository;
 
@@ -76,9 +81,51 @@ public class MouvementSoldeService {
         return repository.findFirstByEmployeAndStatutOrderByMoisDescCreatedAtDesc(employe, 1);
     }
     
-    
+    // @Scheduled(cron = "0 15 22 * * *") // test: tous les jours à 22h10
+    @Scheduled(cron = "0 0 0 * * *") // Le 1er de chaque mois à minuit
+    public void traiterMouementConges() {
+        LocalDate today = LocalDate.now();
 
-    // ✅ CHAQUE MOIS (cron job automatique)
+        List<DemandeConge> conges = demandeCongeRepository.findByDateDemandeAndDecisionManager(today, 1);
+
+        for (DemandeConge conge : conges) {
+            if (conge.getEmploye() == null) {
+                continue;
+            }
+
+            if (!mouvementExiste(conge, today)) {
+                Optional<MouvementSolde> optDernier = getDernierMouvementParEmploye(conge.getEmploye());
+                if (optDernier.isEmpty()) {
+                    continue;
+                }
+
+                MouvementSolde dernierMouvement = optDernier.get();
+
+                MouvementSolde mouvement = new MouvementSolde();
+                mouvement.setEmploye(conge.getEmploye());
+                mouvement.setTypeMouvement(TypeEnumConge.PRISE);
+                mouvement.setNbCongePris(dernierMouvement.getNbCongePris() + 1);
+                mouvement.setNbCongeRestant(dernierMouvement.getNbCongeRestant() - 1);
+                mouvement.setNbCongeTotal(dernierMouvement.getNbCongeTotal() - 1);
+                mouvement.setAnnee(today.getYear());
+                mouvement.setMois(today.getMonthValue());
+                mouvement.setStatut(1);
+                repository.save(mouvement);
+            }
+        }
+    }
+
+    private boolean mouvementExiste(DemandeConge conge, LocalDate date) {
+        return repository.existsByEmployeAndMoisAndAnneeAndTypeMouvementAndStatut(
+                conge.getEmploye(),
+                date.getMonthValue(),
+                date.getYear(),
+                TypeEnumConge.PRISE,
+                1
+        );
+    }
+
+    // ? CHAQUE MOIS (cron job automatique)
     
     
     // AUJOURD'HUI À 11H HEURE MADAGASCAR

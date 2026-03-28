@@ -3,7 +3,13 @@ package com.rh.manage.Controller;
 import com.rh.manage.Dto.DepartementHierarchiqueDTO;
 import com.rh.manage.Dto.ManagerHierarchiqueDTO;
 import com.rh.manage.Dto.EmployeCompactDTO;
+import com.rh.manage.Service.JwtService;
 import com.rh.manage.Service.VueEmployeManagerCompletService;
+
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -11,14 +17,18 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/hierarchie")
-// @CrossOrigin(origins = "*")
 
 public class VueEmployeManagerCompletController {
     
     private final VueEmployeManagerCompletService service;
+    private final JwtService jwtService;
     
-    public VueEmployeManagerCompletController(VueEmployeManagerCompletService service) {
+    public VueEmployeManagerCompletController(
+            VueEmployeManagerCompletService service,
+            JwtService jwtService
+    ) {
         this.service = service;
+        this.jwtService = jwtService;
     }
     
     // 1. Endpoint principal pour l'organigramme compact
@@ -28,14 +38,43 @@ public class VueEmployeManagerCompletController {
         return ResponseEntity.ok(organigramme);
     }
     
-    // 2. Endpoint pour l'organigramme complet (original)
-    // @GetMapping("/organigramme")
-    // public ResponseEntity<Map<String, Object>> getOrganigrammeComplet() {
-    //     Map<String, Object> organigramme = service.getOrganigrammeComplet();
-    //     return ResponseEntity.ok(organigramme);
-    // }
+    @GetMapping("/organigramme-compact/manager")
+    public ResponseEntity<Map<String, Object>> getManagerCompactByMatricule(
+            HttpServletRequest request) {
+
+        try {
+            String authHeader = request.getHeader("Authorization");
+
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of(
+                                "status", 401,
+                                "message", "Token manquant",
+                                "error", "UNAUTHENTICATED"
+                        ));
+            }
+
+            String token = authHeader.substring(7);
+
+            Claims claims = jwtService.validateToken(token);
+
+            // ✅ Ici String (comme tu veux)
+            String idEmploye = claims.get("idEmploye", String.class);
+
+            return ResponseEntity.ok(
+                    service.getOrganigrammeForManager(idEmploye)
+            );
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "status", "error",
+                            "message", e.getMessage()
+                    ));
+        }
+    }
     
-    // 3. Endpoint pour un département spécifique (version compacte)
     @GetMapping("/departement/{nom}")
     public ResponseEntity<Map<String, Object>> getDepartementCompact(@PathVariable String nom) {
         Map<String, Object> organigramme = service.getOrganigrammeCompact();
@@ -63,7 +102,6 @@ public class VueEmployeManagerCompletController {
         ));
     }
     
-    // 4. Endpoint pour un manager spécifique (version compacte)
     @GetMapping("/manager/{nomManager}")
     public ResponseEntity<Map<String, Object>> getManagerCompact(@PathVariable String nomManager) {
         Map<String, Object> organigramme = service.getOrganigrammeCompact();

@@ -36,15 +36,8 @@ public class RegleGestionCongesService {
     }
 
     public RegleGestionConges update(int id, RegleGestionConges regle) {
-        RegleGestionConges regles = repository.findById(id).get();
-        regles.setAncienneteRequis(regle.getAncienneteRequis());
-        regles.setSoldeMensuel(regle.getSoldeMensuel());
-        regles.setWeekEndInclus(regle.getWeekEndInclus());
-        regles.setLimiteReportAnnuel(regle.getLimiteReportAnnuel());
-
-        System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++");
-        System.out.println("statut : " + regles.getStatut());
-        return repository.save(regles);
+        regle.setId(id);
+        return repository.save(regle);
     }
 
     public RegleGestionConges softDelete(int id) {

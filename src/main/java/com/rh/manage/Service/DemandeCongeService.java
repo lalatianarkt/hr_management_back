@@ -56,6 +56,9 @@ public class DemandeCongeService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private UserRoleService userRoleService;
+
     private static final String[] NOMS_MOIS = {
         "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
         "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
@@ -79,7 +82,7 @@ public class DemandeCongeService {
         User managerUser = userService.getById(userId)
             .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-        if (!"Manager".equals(managerUser.getTypeUser().getType())) {
+        if (!userRoleService.hasRole(managerUser.getId(), "Manager")) {
             throw new RuntimeException("Accès réservé aux managers");
         }
 
@@ -369,6 +372,28 @@ public class DemandeCongeService {
         }
         demandeConge.setId(id);
         return repository.save(demandeConge);
+    }
+
+
+    public DemandeConge updateFromExisting(String id, DemandeConge incoming) {
+        DemandeConge existing = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Gestion demande de congé non trouvée pour l'ID: " + id));
+
+        if (incoming.getDateDebut() != null) existing.setDateDebut(incoming.getDateDebut());
+        if (incoming.getDateFin() != null) existing.setDateFin(incoming.getDateFin());
+        if (incoming.getDateDemande() != null) existing.setDateDemande(incoming.getDateDemande());
+        if (incoming.getDateValidation() != null) existing.setDateValidation(incoming.getDateValidation());
+        if (incoming.getCommentaireAnnulation() != null) existing.setCommentaireAnnulation(incoming.getCommentaireAnnulation());
+        if (incoming.getDecisionManager() != null) existing.setDecisionManager(incoming.getDecisionManager());
+        if (incoming.getCommentaireManager() != null) existing.setCommentaireManager(incoming.getCommentaireManager());
+        if (incoming.getCommentaire() != null) existing.setCommentaire(incoming.getCommentaire());
+        if (incoming.getAutreMotif() != null) existing.setAutreMotif(incoming.getAutreMotif());
+        if (incoming.getNbJours() != null) existing.setNbJours(incoming.getNbJours());
+        if (incoming.getEmploye() != null) existing.setEmploye(incoming.getEmploye());
+        if (incoming.getTypeConge() != null) existing.setTypeConge(incoming.getTypeConge());
+        if (incoming.getManager() != null) existing.setManager(incoming.getManager());
+
+        return repository.save(existing);
     }
 
     // Enregistrer demande

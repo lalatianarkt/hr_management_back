@@ -23,6 +23,8 @@ public interface DemandeCongeRepository extends JpaRepository<DemandeConge, Stri
 
     List<DemandeConge> findByDecisionManager(Integer decisionManager);
 
+    List<DemandeConge> findByDateDemandeAndDecisionManager(LocalDate dateDemande, Integer decisionManager);
+
     // Méthode optionnelle si vous voulez filtrer directement en base de données
     @Query("SELECT d FROM DemandeConge d " +
         "WHERE d.employe.id = :employeId AND " +
@@ -191,4 +193,3 @@ public interface DemandeCongeRepository extends JpaRepository<DemandeConge, Stri
     @Query("SELECT d FROM DemandeConge d ORDER BY d.dateDemande DESC")
     List<DemandeConge> findDemandesRecentest(Pageable pageable);
 }
-

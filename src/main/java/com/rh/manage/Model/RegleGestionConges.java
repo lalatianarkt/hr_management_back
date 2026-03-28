@@ -23,6 +23,9 @@ public class RegleGestionConges {
     @Column(name = "limite_report_annuel")
     private Integer limiteReportAnnuel;
 
+    @Column(name = "duree_annee_report")
+    private Integer dureeAnneeReport;
+
     @Column(name = "statut", nullable = false)
     private Integer statut;
 
@@ -108,6 +111,14 @@ public class RegleGestionConges {
 
     public void setAllocationFamiliale(double allocationFamiliale) {
         this.allocationFamiliale = allocationFamiliale;
+    }
+
+    public Integer getDureeAnneeReport() {
+        return dureeAnneeReport;
+    }
+
+    public void setDureeAnneeReport(Integer dureeAnneeReport) {
+        this.dureeAnneeReport = dureeAnneeReport;
     }
     
 }

@@ -1,6 +1,7 @@
 package com.rh.manage.Repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.rh.manage.Model.User;
@@ -29,5 +30,15 @@ public interface UserRepository extends JpaRepository<User, String> {
 
         // Vérifie si un User est déjà lié à un employé donné (par id employe)
     boolean existsByEmploye_Id(String employeId);
+
+    @Query("""
+        SELECT DISTINCT u
+        FROM User u
+        JOIN FETCH u.employe e
+        LEFT JOIN FETCH u.userRoles ur
+        LEFT JOIN FETCH ur.typeUser tu
+        ORDER BY e.nom ASC, e.prenom ASC
+    """)
+    List<User> findAllWithEmployeAndTypeUser();
 
 }

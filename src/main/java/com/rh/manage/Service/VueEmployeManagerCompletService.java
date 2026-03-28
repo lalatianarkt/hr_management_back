@@ -1,15 +1,25 @@
 package com.rh.manage.Service;
 
 import com.rh.manage.Dto.*;
+import com.rh.manage.Model.InfosProfessionnelles;
 import com.rh.manage.View.VueEmployeManagerComplet;
 import com.rh.manage.Repository.VueEmployeManagerCompletRepository;
+import com.rh.manage.Repository.ManagerRepository;
+import com.rh.manage.Model.Manager;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class VueEmployeManagerCompletService {
-    
+    @Autowired
+    InfosProfessionnellesService infosProfessionnellesService;
+
+    @Autowired
+    ManagerRepository managerRepository;
+
     private final VueEmployeManagerCompletRepository repository;
     
     public VueEmployeManagerCompletService(VueEmployeManagerCompletRepository repository) {
@@ -21,6 +31,7 @@ public class VueEmployeManagerCompletService {
         
         try {
             List<VueEmployeManagerComplet> toutesDonnees = repository.findAll();
+            List<Manager> managersActifs = managerRepository.findByStatut(Manager.Statut.ACTIF);
             
             // DEBUG
             System.out.println("=== DEBUG: Données récupérées ===");
@@ -39,7 +50,6 @@ public class VueEmployeManagerCompletService {
                 parDepartement.computeIfAbsent(departement, k -> new ArrayList<>())
                     .add(emp);
             }
-            
             List<DepartementHierarchiqueDTO> hierarchie = new ArrayList<>();
             
             for (Map.Entry<String, List<VueEmployeManagerComplet>> entry : parDepartement.entrySet()) {
@@ -118,31 +128,67 @@ public class VueEmployeManagerCompletService {
                     managers.add(managerDTO);
                     System.out.println("  Créé manager: " + nomManager + " avec " + subordonnes.size() + " subordonnés");
                 }
-                
-                // 2. Ajouter les employés sans manager (managers isolés ou employés seuls)
-                List<VueEmployeManagerComplet> employesSansManager = employesDuDepartement.stream()
-                    .filter(emp -> emp.getNomCompletManager() == null || emp.getNomCompletManager().trim().isEmpty())
-                    .collect(Collectors.toList());
-                
-                for (VueEmployeManagerComplet emp : employesSansManager) {
-                    // Vérifier si c'est déjà un manager (pour éviter les doublons)
-                    boolean dejaManager = managers.stream()
-                        .anyMatch(m -> m.getNomComplet().equals(emp.getNomComplet()));
-                    
-                    if (!dejaManager) {
-                        ManagerHierarchiqueDTO managerIsole = ManagerHierarchiqueDTO.createWithSubordonnes(
-                            emp.getNomComplet(),
-                            emp.getEmployeMatricule(),
-                            emp.getNomPoste(),
-                            emp.getNomNiveau(),
-                            emp.getRang(),
-                            new ArrayList<>() // Pas de subordonnés
-                        );
-                        managers.add(managerIsole);
-                        System.out.println("  Ajouté employé isolé: " + emp.getNomComplet());
+                // 3. Ajouter le manager du departement meme si aucun employe ne le reference
+                Map<String, VueEmployeManagerComplet> employeParId = employesDuDepartement.stream()
+                    .filter(emp -> emp.getIdEmploye() != null)
+                    .collect(Collectors.toMap(
+                        VueEmployeManagerComplet::getIdEmploye,
+                        emp -> emp,
+                        (a, b) -> a
+                    ));
+
+                Set<String> nomsManagers = managers.stream()
+                    .map(ManagerHierarchiqueDTO::getNomComplet)
+                    .collect(Collectors.toSet());
+
+                Set<String> matriculesManagers = managers.stream()
+                    .map(ManagerHierarchiqueDTO::getMatricule)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+
+                for (Manager managerActif : managersActifs) {
+                    if (managerActif.getDepartement() == null || managerActif.getDepartement().getNom() == null) {
+                        continue;
+                    }
+                    if (!managerActif.getDepartement().getNom().equalsIgnoreCase(nomDepartement)) {
+                        continue;
+                    }
+                    if (managerActif.getEmploye() == null || managerActif.getEmploye().getId() == null) {
+                        continue;
+                    }
+
+                    VueEmployeManagerComplet infoManager = employeParId.get(managerActif.getEmploye().getId());
+                    if (infoManager == null) {
+                        // Le manager n'existe pas dans la vue -> on ne l'ajoute pas
+                        continue;
+                    }
+
+                    String nomCompletManager = infoManager.getNomComplet();
+                    String matriculeManager = infoManager.getEmployeMatricule();
+
+                    if (nomsManagers.contains(nomCompletManager)) {
+                        continue;
+                    }
+                    if (matriculeManager != null && matriculesManagers.contains(matriculeManager)) {
+                        continue;
+                    }
+
+                    ManagerHierarchiqueDTO managerSansSub = ManagerHierarchiqueDTO.createWithSubordonnesCompacts(
+                        nomCompletManager,
+                        matriculeManager,
+                        infoManager.getNomPoste(),
+                        infoManager.getNomNiveau(),
+                        infoManager.getRang(),
+                        new ArrayList<>()
+                    );
+
+                    managers.add(managerSansSub);
+                    nomsManagers.add(nomCompletManager);
+                    if (matriculeManager != null) {
+                        matriculesManagers.add(matriculeManager);
                     }
                 }
-                
+
                 // Trier les managers par rang (décroissant) puis par nombre de subordonnés
                 managers.sort((m1, m2) -> {
                     // D'abord par rang
@@ -207,6 +253,300 @@ public class VueEmployeManagerCompletService {
         return response;
     }
 
+    public Map<String, Object> getOrganigrammeCompactByDepartement(String idEmploye) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            String nomDepartement = infosProfessionnellesService.findLastByEmployeId(idEmploye).getDepartement().getNom();
+            List<VueEmployeManagerComplet> toutesDonnees = repository.findAll();
+            List<Manager> managersActifs = managerRepository.findByStatut(Manager.Statut.ACTIF);
+            
+            // DEBUG
+            System.out.println("=== DEBUG: Données récupérées ===");
+            toutesDonnees.forEach(emp -> {
+                System.out.println("Employé: " + emp.getNomComplet() + 
+                                ", Manager: " + emp.getNomCompletManager() +
+                                ", Département: " + emp.getNomDepartement());
+            });
+            
+            Map<String, List<VueEmployeManagerComplet>> parDepartement = new HashMap<>();
+            
+            for (VueEmployeManagerComplet emp : toutesDonnees) {
+                String departement = emp.getNomDepartement() != null ? 
+                    emp.getNomDepartement().trim() : "Non assigné";
+                
+                parDepartement.computeIfAbsent(departement, k -> new ArrayList<>())
+                    .add(emp);
+            }
+            List<DepartementHierarchiqueDTO> hierarchie = new ArrayList<>();
+            
+            for (Map.Entry<String, List<VueEmployeManagerComplet>> entry : parDepartement.entrySet()) {
+                String nomDepartemantCourant = entry.getKey();
+                List<VueEmployeManagerComplet> employesDuDepartement = entry.getValue();
+                
+                // Filtrer par département demandé
+                if (!nomDepartemantCourant.equals(nomDepartement)) {
+                    continue;
+                }
+                
+                System.out.println("=== Département: " + nomDepartemantCourant + " ===");
+                
+                // Grouper les employés par manager
+                Map<String, List<VueEmployeManagerComplet>> subordonnesParManager = new HashMap<>();
+                
+                for (VueEmployeManagerComplet emp : employesDuDepartement) {
+                    String manager = emp.getNomCompletManager();
+                    if (manager != null && !manager.trim().isEmpty()) {
+                        subordonnesParManager.computeIfAbsent(manager, k -> new ArrayList<>())
+                            .add(emp);
+                        System.out.println("  " + emp.getNomComplet() + " → Manager: " + manager);
+                    }
+                }
+                
+                // Identifier les managers (ceux qui ont des subordonnés)
+                Map<String, VueEmployeManagerComplet> infosManagers = new HashMap<>();
+                
+                for (String nomManager : subordonnesParManager.keySet()) {
+                    Optional<VueEmployeManagerComplet> infoManager = employesDuDepartement.stream()
+                        .filter(emp -> nomManager.equals(emp.getNomComplet()))
+                        .findFirst();
+                    
+                    if (infoManager.isPresent()) {
+                        infosManagers.put(nomManager, infoManager.get());
+                        System.out.println("  Manager " + nomManager + " trouvé dans les données");
+                    } else {
+                        System.out.println("  Manager " + nomManager + " NON trouvé (externe)");
+                    }
+                }
+                
+                // Créer les DTO managers
+                List<ManagerHierarchiqueDTO> managers = new ArrayList<>();
+                
+                // 1. Managers qui ont des subordonnés
+                for (Map.Entry<String, List<VueEmployeManagerComplet>> entryManager : subordonnesParManager.entrySet()) {
+                    String nomManager = entryManager.getKey();
+                    List<VueEmployeManagerComplet> subordonnes = entryManager.getValue();
+                    VueEmployeManagerComplet infoManager = infosManagers.get(nomManager);
+                    
+                    // Convertir les subordonnés en format compact
+                    List<EmployeCompactDTO> subordonnesCompacts = subordonnes.stream()
+                        .map(this::convertirEnEmployeCompactDTO)
+                        .collect(Collectors.toList());
+                    
+                    ManagerHierarchiqueDTO managerDTO;
+                    
+                    if (infoManager != null) {
+                        // Manager trouvé dans les données
+                        managerDTO = ManagerHierarchiqueDTO.createWithSubordonnesCompacts(
+                            infoManager.getNomComplet(),
+                            infoManager.getEmployeMatricule(),
+                            infoManager.getNomPoste(),
+                            infoManager.getNomNiveau(),
+                            infoManager.getRang(),
+                            subordonnesCompacts
+                        );
+                    } else {
+                        // Manager non trouvé (externe) - utiliser les infos des subordonnés
+                        VueEmployeManagerComplet premierSubordonne = subordonnes.get(0);
+                        managerDTO = ManagerHierarchiqueDTO.createWithSubordonnesCompacts(
+                            nomManager,
+                            null, // Pas de matricule
+                            premierSubordonne.getNomPosteManager(),
+                            premierSubordonne.getNomNiveauManager(),
+                            premierSubordonne.getRangPosteManager(),
+                            subordonnesCompacts
+                        );
+                    }
+                    
+                    managers.add(managerDTO);
+                    System.out.println("  Créé manager: " + nomManager + " avec " + subordonnes.size() + " subordonnés");
+                }
+                // 3. Ajouter le manager du departement meme si aucun employe ne le reference
+                Map<String, VueEmployeManagerComplet> employeParId = employesDuDepartement.stream()
+                    .filter(emp -> emp.getIdEmploye() != null)
+                    .collect(Collectors.toMap(
+                        VueEmployeManagerComplet::getIdEmploye,
+                        emp -> emp,
+                        (a, b) -> a
+                    ));
+
+                Set<String> nomsManagers = managers.stream()
+                    .map(ManagerHierarchiqueDTO::getNomComplet)
+                    .collect(Collectors.toSet());
+
+                Set<String> matriculesManagers = managers.stream()
+                    .map(ManagerHierarchiqueDTO::getMatricule)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+
+                for (Manager managerActif : managersActifs) {
+                    if (managerActif.getDepartement() == null || managerActif.getDepartement().getNom() == null) {
+                        continue;
+                    }
+                    if (!managerActif.getDepartement().getNom().equalsIgnoreCase(nomDepartemantCourant)) {
+                        continue;
+                    }
+                    if (managerActif.getEmploye() == null || managerActif.getEmploye().getId() == null) {
+                        continue;
+                    }
+
+                    VueEmployeManagerComplet infoManager = employeParId.get(managerActif.getEmploye().getId());
+                    if (infoManager == null) {
+                        // Le manager n'existe pas dans la vue -> on ne l'ajoute pas
+                        continue;
+                    }
+
+                    String nomCompletManager = infoManager.getNomComplet();
+                    String matriculeManager = infoManager.getEmployeMatricule();
+
+                    if (nomsManagers.contains(nomCompletManager)) {
+                        continue;
+                    }
+                    if (matriculeManager != null && matriculesManagers.contains(matriculeManager)) {
+                        continue;
+                    }
+
+                    ManagerHierarchiqueDTO managerSansSub = ManagerHierarchiqueDTO.createWithSubordonnesCompacts(
+                        nomCompletManager,
+                        matriculeManager,
+                        infoManager.getNomPoste(),
+                        infoManager.getNomNiveau(),
+                        infoManager.getRang(),
+                        new ArrayList<>()
+                    );
+
+                    managers.add(managerSansSub);
+                    nomsManagers.add(nomCompletManager);
+                    if (matriculeManager != null) {
+                        matriculesManagers.add(matriculeManager);
+                    }
+                }
+
+                // Trier les managers par rang (décroissant) puis par nombre de subordonnés
+                managers.sort((m1, m2) -> {
+                    // D'abord par rang
+                    Integer rang1 = m1.getRang() != null ? m1.getRang() : 0;
+                    Integer rang2 = m2.getRang() != null ? m2.getRang() : 0;
+                    int compareRang = rang2.compareTo(rang1);
+                    if (compareRang != 0) return compareRang;
+                    
+                    // Ensuite par nombre de subordonnés
+                    int sub1 = m1.getNombreSubordonnes() != null ? m1.getNombreSubordonnes() : 0;
+                    int sub2 = m2.getNombreSubordonnes() != null ? m2.getNombreSubordonnes() : 0;
+                    return Integer.compare(sub2, sub1);
+                });
+                
+                hierarchie.add(new DepartementHierarchiqueDTO(nomDepartemantCourant, managers));
+            }
+            
+            // Calculer les statistiques
+            Map<String, Object> statistiques = new HashMap<>();
+            statistiques.put("totalDepartements", hierarchie.size());
+            statistiques.put("totalManagers", hierarchie.stream()
+                .mapToInt(dep -> dep.getManagers().size()).sum());
+            statistiques.put("totalEmployes", hierarchie.stream()
+                .flatMap(dep -> dep.getManagers().stream())
+                .mapToInt(m -> m.getNombreSubordonnes() != null ? m.getNombreSubordonnes() : 0)
+                .sum());
+            
+            response.put("status", "success");
+            response.put("timestamp", new Date());
+            response.put("hierarchie", hierarchie);
+            response.put("statistiques", statistiques);
+            
+            // DEBUG final
+            System.out.println("=== DEBUG FINAL ===");
+            System.out.println("Départements: " + hierarchie.size());
+            hierarchie.forEach(dep -> {
+                System.out.println("  " + dep.getNomDepartement() + ": " + 
+                    dep.getManagers().size() + " managers");
+                dep.getManagers().forEach(m -> {
+                    System.out.println("    - " + m.getNomComplet() + " (" + 
+                        m.getNombreSubordonnes() + " subordonnés)");
+                });
+            });
+            
+        } catch (Exception e) {
+            System.err.println("=== ERREUR dans getOrganigrammeCompactByDepartement ===");
+            e.printStackTrace();
+            
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+            response.put("hierarchie", new ArrayList<>());
+            response.put("statistiques", Map.of(
+                "totalDepartements", 0,
+                "totalManagers", 0,
+                "totalEmployes", 0
+            ));
+        }
+        
+        return response;
+    }
+
+    public Map<String, Object> getOrganigrammeForManager(String idEmploye) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // 1. Récupérer les infos du manager connecté
+            InfosProfessionnelles infosPro = infosProfessionnellesService.findLastByEmployeId(idEmploye);
+            
+            if (infosPro == null) {
+                response.put("status", "error");
+                response.put("message", "Informations professionnelles non trouvées");
+                return response;
+            }
+            
+            String nomDepartement = infosPro.getDepartement().getNom();
+            
+            // 2. Récupérer TOUS les employés du département
+            List<VueEmployeManagerComplet> employesDuDepartement = repository.findByNomDepartement(nomDepartement);
+            
+            // 3. Le manager est l'utilisateur connecté
+            // On crée un objet manager à partir de ses infos
+            ManagerHierarchiqueDTO managerDTO = new ManagerHierarchiqueDTO();
+            managerDTO.setNomComplet(infosPro.getEmploye().getNom() + " " + infosPro.getEmploye().getPrenom());
+            managerDTO.setMatricule(infosPro.getMatricule());
+            managerDTO.setNomPoste(infosPro.getPoste().getNom());
+            managerDTO.setNomNiveau(infosPro.getPoste().getNiveauHierarchique().getNom());
+            managerDTO.setRang(infosPro.getPoste().getNiveauHierarchique().getRang());
+            
+            // 4. Les subordonnés = tous les employés du département (sauf le manager lui-même)
+            List<EmployeCompactDTO> subordonnes = employesDuDepartement.stream()
+                .filter(emp -> !emp.getEmployeMatricule().equals(infosPro.getMatricule()))
+                .map(this::convertirEnEmployeCompactDTO)
+                .collect(Collectors.toList());
+            
+            managerDTO.setSubordonnesCompacts(subordonnes);
+            managerDTO.setNombreSubordonnes(subordonnes.size());
+            
+            // 5. Construire la réponse
+            response.put("status", "success");
+            response.put("timestamp", new Date());
+            response.put("manager", managerDTO);
+            response.put("departement", nomDepartement);
+            
+            Map<String, Object> statistiques = new HashMap<>();
+            statistiques.put("totalEmployes", subordonnes.size());
+            statistiques.put("totalManagers", 1);
+            response.put("statistiques", statistiques);
+            
+            // Debug
+            System.out.println("=== Vue Manager (simplifiée) ===");
+            System.out.println("Manager: " + managerDTO.getNomComplet());
+            System.out.println("Département: " + nomDepartement);
+            System.out.println("Nombre de subordonnés: " + subordonnes.size());
+            
+        } catch (Exception e) {
+            System.err.println("=== ERREUR ===");
+            e.printStackTrace();
+            
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+        }
+        
+        return response;
+    }
+
     private EmployeCompactDTO convertirEnEmployeCompactDTO(VueEmployeManagerComplet employe) {
         if (employe == null) {
             return new EmployeCompactDTO(null, "Inconnu", "?", "Poste inconnu", "Niveau inconnu", 0, null);
@@ -243,7 +583,8 @@ public class VueEmployeManagerCompletService {
             employe.getRang() != null ? employe.getRang() : 0,
             employe.getNomDepartement()
         );
-    }   
+    }  
+} 
     // public Map<String, Object> getOrganigrammeComplet() {
     //     Map<String, Object> response = new HashMap<>();
         
@@ -322,136 +663,3 @@ public class VueEmployeManagerCompletService {
     //         }
             
     //         // 5b. Ensuite, ajouter les employés sans manager (isolés)
-    //         List<VueEmployeManagerComplet> employesSansManager = toutesDonnees.stream()
-    //             .filter(emp -> emp.getNomCompletManager() == null || emp.getNomCompletManager().isEmpty())
-    //             .collect(Collectors.toList());
-            
-    //         for (VueEmployeManagerComplet emp : employesSansManager) {
-    //             String departement = emp.getNomDepartement();
-    //             ManagerHierarchiqueDTO managerIsole = new ManagerHierarchiqueDTO(
-    //                 emp.getNomComplet(),
-    //                 emp.getEmployeMatricule(),
-    //                 emp.getNomPoste(),
-    //                 emp.getNomNiveau(),
-    //                 emp.getRang(),
-    //                 new ArrayList<>() // Pas de subordonnés
-    //             );
-                
-    //             managersParDepartement.computeIfAbsent(departement, k -> new ArrayList<>())
-    //                 .add(managerIsole);
-    //         }
-            
-    //         // 6. Convertir en structure DTO par département
-    //         List<DepartementHierarchiqueDTO> hierarchie = managersParDepartement.entrySet().stream()
-    //             .map(entry -> {
-    //                 List<ManagerHierarchiqueDTO> managers = entry.getValue();
-    //                 // Trier les managers par rang (décroissant)
-    //                 managers.sort((m1, m2) -> {
-    //                     Integer rang1 = m1.getRang() != null ? m1.getRang() : 0;
-    //                     Integer rang2 = m2.getRang() != null ? m2.getRang() : 0;
-    //                     return rang2.compareTo(rang1);
-    //                 });
-                    
-    //                 return new DepartementHierarchiqueDTO(entry.getKey(), managers);
-    //             })
-    //             .sorted(Comparator.comparing(DepartementHierarchiqueDTO::getNomDepartement))
-    //             .collect(Collectors.toList());
-            
-    //         // 7. Calculer les statistiques
-    //         Map<String, Object> statistiques = new HashMap<>();
-            
-    //         int totalManagers = hierarchie.stream()
-    //             .mapToInt(dep -> dep.getManagers().size())
-    //             .sum();
-    //         int totalEmployes = hierarchie.stream()
-    //             .flatMap(dep -> dep.getManagers().stream())
-    //             .mapToInt(manager -> manager.getSubordonnes().size())
-    //             .sum();
-            
-    //         // Calculer les écarts hiérarchiques
-    //         List<Integer> ecarts = hierarchie.stream()
-    //             .flatMap(dep -> dep.getManagers().stream())
-    //             .flatMap(manager -> manager.getSubordonnes().stream())
-    //             .map(EmployeHierarchiqueDTO::getEcartHierarchique)
-    //             .filter(Objects::nonNull)
-    //             .collect(Collectors.toList());
-            
-    //         long grandsEcarts = ecarts.stream().filter(ecart -> ecart >= 2).count();
-            
-    //         statistiques.put("totalDepartements", hierarchie.size());
-    //         statistiques.put("totalManagers", totalManagers);
-    //         statistiques.put("totalEmployes", totalEmployes);
-    //         statistiques.put("totalPersonnel", totalManagers + totalEmployes);
-    //         statistiques.put("grandsEcarts", grandsEcarts);
-            
-    //         // Statistiques par département
-    //         List<Map<String, Object>> statsParDepartement = hierarchie.stream()
-    //             .map(dep -> {
-    //                 Map<String, Object> stats = new HashMap<>();
-    //                 stats.put("nom", dep.getNomDepartement());
-    //                 stats.put("managers", dep.getManagers().size());
-    //                 int employesDep = dep.getManagers().stream()
-    //                     .mapToInt(manager -> manager.getSubordonnes().size())
-    //                     .sum();
-    //                 stats.put("employes", employesDep);
-    //                 stats.put("total", dep.getManagers().size() + employesDep);
-    //                 return stats;
-    //             })
-    //             .collect(Collectors.toList());
-            
-    //         statistiques.put("parDepartement", statsParDepartement);
-            
-    //         // 8. Construire la réponse finale
-    //         response.put("status", "success");
-    //         response.put("timestamp", System.currentTimeMillis());
-    //         response.put("hierarchie", hierarchie);
-    //         response.put("statistiques", statistiques);
-            
-    //     } catch (Exception e) {
-    //         response.put("status", "error");
-    //         response.put("message", "Erreur: " + e.getMessage());
-    //         response.put("hierarchie", new ArrayList<>());
-    //         response.put("statistiques", new HashMap<>());
-    //     }
-        
-    //     return response;
-    // }
-    
-    private EmployeHierarchiqueDTO convertirEnEmployeDTO(VueEmployeManagerComplet employe) {
-        Integer ecart = null;
-        if (employe.getRang() != null && employe.getRangPosteManager() != null) {
-            ecart = employe.getRangPosteManager() - employe.getRang();
-        }
-        
-        return new EmployeHierarchiqueDTO(
-            employe.getEmployeMatricule(),
-            employe.getNomComplet(),
-            employe.getNomPoste(),
-            employe.getNomNiveau(),
-            employe.getRang(),
-            employe.getNomDepartement(),
-            employe.getNomCompletManager(),
-            ecart
-        );
-    }
-    
-    // Méthode simple pour afficher les données brutes (debug)
-    public List<Map<String, Object>> getDonneesBrutes() {
-        return repository.findAll().stream()
-            .map(emp -> {
-                Map<String, Object> map = new HashMap<>();
-                map.put("matricule", emp.getEmployeMatricule());
-                map.put("nomComplet", emp.getNomComplet());
-                map.put("poste", emp.getNomPoste());
-                map.put("niveau", emp.getNomNiveau());
-                map.put("rang", emp.getRang());
-                map.put("departement", emp.getNomDepartement());
-                map.put("manager", emp.getNomCompletManager());
-                map.put("posteManager", emp.getNomPosteManager());
-                map.put("niveauManager", emp.getNomNiveauManager());
-                map.put("rangManager", emp.getRangPosteManager());
-                return map;
-            })
-            .collect(Collectors.toList());
-    }
-}

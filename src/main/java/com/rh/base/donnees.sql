@@ -264,6 +264,10 @@ VALUES
 ('S occupe de la comptabilite, des budgets et des audits', 'Comptabilite Generale', 10, 'TDEP4', NOW(), NULL),
 ('Assure la maintenance des equipements et la logistique interne', 'Maintenance et Logistique', 8, 'TDEP5', NOW(), NULL);
 
+INSERT INTO departement (description, nom, nb_employe, id_departement, created_at, modified_at)
+VALUES
+('Supervise la strategie globale, la gouvernance et la coordination inter-departements', 'Direction Generale', 3, 'TDEP0', NOW(), NULL);
+
 INSERT INTO nationalite (nationalite) VALUES
 ('Malagasy'),
 ('Sud Africaine'),
@@ -956,11 +960,11 @@ INSERT INTO region (id, nom, created_at, modified_at) VALUES
 
 -- Insertion des catégories professionnelles pour Madagascar
 INSERT INTO categorie_professionnelle (id, code, libelle, description, created_at, modified_at) VALUES
-('CP01', 'A', 'Groupe A', 'Cadres supérieurs et personnels de direction', NOW(), NULL),
-('CP02', 'B', 'Groupe B', 'Cadres intermédiaires et techniciens', NOW(), NULL),
-('CP03', 'C', 'Groupe C', 'Employés et agents administratifs', NOW(), NULL),
-('CP04', 'D', 'Groupe D', 'Ouvriers qualifiés', NOW(), NULL),
-('CP05', 'E', 'Groupe E', 'Ouvriers non qualifiés', NOW(), NULL);
+('CP01', 'A', 'Groupe A', 'Cadres supérieurs et personnels de direction', NOW(), NOW()),
+('CP02', 'B', 'Groupe B', 'Cadres intermédiaires et techniciens', NOW(), NOW()),
+('CP03', 'C', 'Groupe C', 'Employés et agents administratifs', NOW(), NOW()),
+('CP04', 'D', 'Groupe D', 'Ouvriers qualifiés', NOW(), NOW()),
+('CP05', 'E', 'Groupe E', 'Ouvriers non qualifiés', NOW(), NOW());
 
 
 -- Types d'entrée du salarié dans l'entreprise
