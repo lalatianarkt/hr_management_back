@@ -1,0 +1,40 @@
+-- poste test data (existants)
+BEGIN;
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST001', 'Assistant Ressources Humaines', 'Poste Assistant - Ressources Humaines', 'NOW()', 'NOW()', 'DEP1', 'NIV2');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST002', 'Agent Ressources Humaines', 'Poste Agent - Ressources Humaines', 'NOW()', 'NOW()', 'DEP1', 'NIV3');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST003', 'Chef de Service Ressources Humaines', 'Poste Chef de Service - Ressources Humaines', 'NOW()', 'NOW()', 'DEP1', 'NIV5');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST004', 'Superviseur Ressources Humaines', 'Poste Superviseur - Ressources Humaines', 'NOW()', 'NOW()', 'DEP1', 'NIV4');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST005', 'Directeur Ressources Humaines', 'Poste Directeur - Ressources Humaines', 'NOW()', 'NOW()', 'DEP1', 'NIV6');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST006', 'Assistant Developpement Informatique', 'Poste Assistant - Developpement Informatique', 'NOW()', 'NOW()', 'DEP3', 'NIV2');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST007', 'Agent Developpement Informatique', 'Poste Agent - Developpement Informatique', 'NOW()', 'NOW()', 'DEP3', 'NIV3');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST008', 'Chef de Service Developpement Informatique', 'Poste Chef de Service - Developpement Informatique', 'NOW()', 'NOW()', 'DEP3', 'NIV5');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST009', 'Superviseur Developpement Informatique', 'Poste Superviseur - Developpement Informatique', 'NOW()', 'NOW()', 'DEP3', 'NIV4');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST010', 'Directeur Developpement Informatique', 'Poste Directeur - Developpement Informatique', 'NOW()', 'NOW()', 'DEP3', 'NIV6');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST011', 'Assistant Ventes et Marketing', 'Poste Assistant - Ventes et Marketing', 'NOW()', 'NOW()', 'DEP2', 'NIV2');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST012', 'Agent Ventes et Marketing', 'Poste Agent - Ventes et Marketing', 'NOW()', 'NOW()', 'DEP2', 'NIV3');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST013', 'Chef de Service Ventes et Marketing', 'Poste Chef de Service - Ventes et Marketing', 'NOW()', 'NOW()', 'DEP2', 'NIV5');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST014', 'Superviseur Ventes et Marketing', 'Poste Superviseur - Ventes et Marketing', 'NOW()', 'NOW()', 'DEP2', 'NIV4');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST015', 'Directeur Ventes et Marketing', 'Poste Directeur - Ventes et Marketing', 'NOW()', 'NOW()', 'DEP2', 'NIV6');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST016', 'Assistant Finance', 'Poste Assistant - Finance', 'NOW()', 'NOW()', 'DEP4', 'NIV2');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST017', 'Agent Finance', 'Poste Agent - Finance', 'NOW()', 'NOW()', 'DEP4', 'NIV3');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST018', 'Chef de Service Finance', 'Poste Chef de Service - Finance', 'NOW()', 'NOW()', 'DEP4', 'NIV5');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST019', 'Superviseur Finance', 'Poste Superviseur - Finance', 'NOW()', 'NOW()', 'DEP4', 'NIV4');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST020', 'Directeur Finance', 'Poste Directeur - Finance', 'NOW()', 'NOW()', 'DEP4', 'NIV6');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST021', 'Assistant Operations', 'Poste Assistant - Operations', 'NOW()', 'NOW()', 'DEP5', 'NIV2');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST022', 'Agent Operations', 'Poste Agent - Operations', 'NOW()', 'NOW()', 'DEP5', 'NIV3');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST023', 'Chef de Service Operations', 'Poste Chef de Service - Operations', 'NOW()', 'NOW()', 'DEP5', 'NIV5');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST024', 'Superviseur Operations', 'Poste Superviseur - Operations', 'NOW()', 'NOW()', 'DEP5', 'NIV4');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST025', 'Directeur Operations', 'Poste Directeur - Operations', 'NOW()', 'NOW()', 'DEP5', 'NIV6');
+COMMIT;
+
+
+BEGIN;
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST026', 'Directeur General', 'Direction generale et pilotage strategique', 'NOW()', 'NOW()', 'DEP338BD413', 'NIV7');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST033', 'Directeur General Adjoint', 'Appui a la direction generale', 'NOW()', 'NOW()', 'DEP338BD413', 'NIV6');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST027', 'Assistant de Direction', 'Assistance a la direction generale', 'NOW()', 'NOW()', 'DEP338BD413', 'NIV2');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST028', 'Secretaire de Direction', 'Gestion administrative de la direction', 'NOW()', 'NOW()', 'DEP338BD413', 'NIV2');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST029', 'Chef Intendance', 'Supervision des services d intendance', 'NOW()', 'NOW()', 'DEP7C3861D7', 'NIV5');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST030', 'Agent d entretien', 'Nettoyage et maintenance des locaux', 'NOW()', 'NOW()', 'DEP7C3861D7', 'NIV1');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST031', 'Gardien', 'Surveillance et securite des locaux', 'NOW()', 'NOW()', 'DEP7C3861D7', 'NIV1');
+INSERT INTO poste (id, nom, description, created_at, modified_at, id_departement, id_niveau) VALUES ('POST032', 'Femme de menage', 'Nettoyage quotidien des locaux', 'NOW()', 'NOW()', 'DEP7C3861D7', 'NIV1');
+COMMIT;

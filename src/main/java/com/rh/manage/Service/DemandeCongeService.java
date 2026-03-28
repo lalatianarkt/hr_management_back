@@ -11,6 +11,7 @@ import com.rh.manage.Model.Token;
 import com.rh.manage.Model.TypeConge;
 import com.rh.manage.Model.TypeEnumConge;
 import com.rh.manage.Model.User;
+import com.rh.manage.Model.UserRole;
 import com.rh.manage.Repository.DemandeCongeRepository;
 
 import org.bouncycastle.jcajce.provider.asymmetric.dsa.DSASigner.detDSA;
@@ -56,6 +57,9 @@ public class DemandeCongeService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private UserRoleService userRoleService;
+
     private static final String[] NOMS_MOIS = {
         "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
         "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
@@ -79,7 +83,15 @@ public class DemandeCongeService {
         User managerUser = userService.getById(userId)
             .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-        if (!"Manager".equals(managerUser.getTypeUser().getType())) {
+        List<UserRole> userRoles = userRoleService.getByUserId(userId);
+        if(userRoles == null || userRoles.isEmpty()) {
+            throw new RuntimeException("Aucun rôle trouvé pour cet utilisateur");
+        } 
+
+        boolean isManager = userRoles.stream()
+            .anyMatch(userRole -> "Manager".equals(userRole.getTypeUser().getType())); 
+        
+        if(!isManager) {
             throw new RuntimeException("Accès réservé aux managers");
         }
 

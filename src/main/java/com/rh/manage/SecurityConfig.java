@@ -31,6 +31,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/users/auth").permitAll()
                 .requestMatchers("/api/users/register").permitAll()
+                .requestMatchers("/api/users/all").permitAll()
                 // ✅ TOUT LE RESTE NÉCESSITE AUTHENTIFICATION
                 .anyRequest().authenticated()
             )

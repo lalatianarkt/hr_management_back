@@ -11,6 +11,7 @@ import com.rh.manage.Model.InfosProfessionnelles;
 import com.rh.manage.Model.Manager;
 import com.rh.manage.Model.Token;
 import com.rh.manage.Model.User;
+import com.rh.manage.Model.UserRole;
 // import com.rh.manage.Model.ManagerEmploye;
 import com.rh.manage.Repository.DepartementManagerRepository;
 import com.rh.manage.Repository.DepartementRepository;
@@ -55,6 +56,9 @@ public class ManagerService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private UserRoleService userRoleService;
+
     public Boolean isManager(Employe employe){
         if(managerRepository.findByEmployeId(employe.getId()).isPresent()){
             return true;
@@ -92,7 +96,15 @@ public class ManagerService {
         User managerUser = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-        if (!"Manager".equalsIgnoreCase(managerUser.getTypeUser().getType())) {
+        List<UserRole> userRoles = userRoleService.getByUserId(userId);
+        if(userRoles == null || userRoles.isEmpty()) {
+            throw new RuntimeException("Aucun rôle trouvé pour cet utilisateur");
+        } 
+
+        boolean isManager = userRoles.stream()
+            .anyMatch(userRole -> "Manager".equals(userRole.getTypeUser().getType())); 
+        
+        if(!isManager) {
             throw new RuntimeException("Accès réservé aux managers");
         }
 
@@ -149,14 +161,19 @@ public class ManagerService {
         if (managerActuel == null) {
             throw new RuntimeException("Utilisateur non trouvé pour ce token");
         }
+
+        List<UserRole> userRoles = userRoleService.getByUserId(gottenToken.getUser().getId());
+        if(userRoles == null || userRoles.isEmpty()) {
+            throw new RuntimeException("Aucun rôle trouvé pour cet utilisateur");
+        } 
+
+        boolean isManager = userRoles.stream()
+            .anyMatch(userRole -> "Manager".equals(userRole.getTypeUser().getType())); 
         
-        // 6. Vérifier que c'est bien un manager (optionnel mais recommandé)
-        if (managerActuel.getTypeUser() == null || 
-            !"Manager".equals(managerActuel.getTypeUser().getType())) {
+        if(!isManager) {
             throw new RuntimeException("Accès réservé aux managers");
         }
-        System.out.println("tena manager ve izy e ? " + managerActuel.getTypeUser());
-        
+                
         // 7. Vérifier que l'utilisateur a un employé associé
         if (managerActuel.getEmploye() == null) {
             throw new RuntimeException("Aucun employé associé à cet utilisateur");
