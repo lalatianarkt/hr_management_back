@@ -86,6 +86,17 @@ public interface DemandeCongeRepository extends JpaRepository<DemandeConge, Stri
     Page<DemandeConge> findByDateDemandeAfter(@Param("dateLimite") LocalDate dateLimite, Pageable pageable);
 
     /**
+     * Recupere les demandes de conge actives pour aujourd'hui et un statut donne
+     * (actif = aujourd'hui entre dateDebut et dateFin).
+     */
+    @Query("SELECT d FROM DemandeConge d " +
+           "WHERE d.dateDebut <= :today AND d.dateFin >= :today AND d.statut = :statut")
+    List<DemandeConge> findTodayDemandeCongeActif(
+        @Param("today") LocalDate today,
+        @Param("statut") Integer statut);
+
+
+    /**
      * Récupère toutes les demandes de congé associées à un manager spécifique
      * @param managerId L'ID du manager
      * @return Liste des demandes de congé gérées par ce manager

@@ -118,9 +118,21 @@ public class MouvementSoldeController {
     }
 
     @GetMapping("/employe/{idEmploye}/solde-actuel")
-    public MouvementSolde getByEmploye(@PathVariable String idEmploye) {
-        Employe employe = employeService.getById(idEmploye).get();
-        return service.getDernierMouvementParEmploye(employe).get();
+    public ResponseEntity<?> getByEmploye(@PathVariable String idEmploye) {
+        System.out.println("🔍 GET /employe/" + idEmploye + "/solde-actuel");
+        try {
+            Employe employe = employeService.getById(idEmploye).get();
+            return ResponseEntity.ok(service.getDernierMouvementParEmploye(employe).get());
+        } catch (Exception e) {
+            System.out.println("ity no tena olana anie : " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "success", false,
+                "error", "Erreur serveur",
+                "message", "Une erreur est survenue",
+                "details", e.getMessage()
+            ));
+        }
     }   
 
     @GetMapping("/type/{typeMouvement}")

@@ -51,13 +51,13 @@ public class StatAllInfoService {
 
     public StatAllInfoDTO getAllStatistiques(){
         StatAllInfoDTO statAllInfoDTO = new StatAllInfoDTO();
-        statAllInfoDTO.setNb_departement(departementService.getAllDepartements().size());
+        statAllInfoDTO.setNb_departement(departementService.getDepartementActif().size());
         statAllInfoDTO.setNb_manager(managerService.getManagerActif().size());
         statAllInfoDTO.setNb_contrat_cdd(infosProfessionnellesService.getAllInfosProParTypeContrat("CDD").size());
         statAllInfoDTO.setNb_contrat_cdi(infosProfessionnellesService.getAllInfosProParTypeContrat("CDI").size());
         statAllInfoDTO.setNb_employe(employeService.findAllEmployeesActived().size());
         statAllInfoDTO.setNb_poste(calculNbPosteOccupe(infosProfessionnellesService.getAllInfoProActif()));
-        // statAllInfoDTO.setNb_employes_en_conges(demandeCongeService.findTodayDemandeCongeActif().size());
+        statAllInfoDTO.setNb_employes_en_conges(demandeCongeService. findTodayDemandeCongeActif().size());
         // statAllInfoDTO.setNb_employes_en_conges(demandeCongeService.findTodayDemandeCongeActif().size());
         // statAllInfoDTO.
         return statAllInfoDTO;

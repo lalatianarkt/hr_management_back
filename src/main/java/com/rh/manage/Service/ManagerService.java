@@ -12,6 +12,7 @@ import com.rh.manage.Model.Manager;
 import com.rh.manage.Model.Token;
 import com.rh.manage.Model.TypeUser;
 import com.rh.manage.Model.User;
+import com.rh.manage.Model.UserRole;
 // import com.rh.manage.Model.ManagerEmploye;
 import com.rh.manage.Repository.DepartementManagerRepository;
 import com.rh.manage.Repository.DepartementRepository;
@@ -58,10 +59,10 @@ public class ManagerService {
     private UserRepository userRepository;
 
     @Autowired
-    private TypeUserRepository typeUserRepository;
+    private UserRoleService userRoleService;
 
     @Autowired
-    private UserRoleService userRoleService;
+    private TypeUserRepository typeUserRepository;
 
     public Boolean isManager(Employe employe){
         if(managerRepository.findByEmployeId(employe.getId()).isPresent()){
@@ -93,7 +94,7 @@ public class ManagerService {
             }
             if(userActuel.isPresent()){
                 if(!userRoleService.hasRole(userActuel.get().getId(), "Manager")){
-                    userRoleService.assignRole(userActuel.get().getId(), typeUserManager);
+                    userRoleService.assignRole(userActuel.get(), typeUserManager);
                 }
             }
         } else{
@@ -106,7 +107,15 @@ public class ManagerService {
         User managerUser = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-        if (!userRoleService.hasRole(managerUser.getId(), "Manager")) {
+        List<UserRole> userRoles = userRoleService.getByUserId(userId);
+        if(userRoles == null || userRoles.isEmpty()) {
+            throw new RuntimeException("Aucun rôle trouvé pour cet utilisateur");
+        } 
+
+        boolean isManager = userRoles.stream()
+            .anyMatch(userRole -> "Manager".equals(userRole.getTypeUser().getType())); 
+        
+        if(!isManager) {
             throw new RuntimeException("Accès réservé aux managers");
         }
 
@@ -163,6 +172,14 @@ public class ManagerService {
         if (managerActuel == null) {
             throw new RuntimeException("Utilisateur non trouvé pour ce token");
         }
+
+        List<UserRole> userRoles = userRoleService.getByUserId(gottenToken.getUser().getId());
+        if(userRoles == null || userRoles.isEmpty()) {
+            throw new RuntimeException("Aucun rôle trouvé pour cet utilisateur");
+        } 
+
+        boolean isManager = userRoles.stream()
+            .anyMatch(userRole -> "Manager".equals(userRole.getTypeUser().getType())); 
         
         // 6. Vérifier que c'est bien un manager (optionnel mais recommandé)
         if (!userRoleService.hasRole(managerActuel.getId(), "Manager")) {

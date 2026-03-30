@@ -44,7 +44,7 @@ public class MouvementService {
             // 1. Vérifier que l'info pro proposée existe
             if (mouvement.getInfosProPropose() == null) {
                 throw new RuntimeException("L'info professionnelle proposée est obligatoire");
-            }
+            } 
             InfosProfessionnelles infosProActuel = mouvement.getInfosProActuel();
             infosProActuel = infosProfessionnellesService.getById(infosProActuel.getId()).get();
             TypeMouvement typeMvt = typeMouvementService.getById(mouvement.getTypeMouvement().getId()).get();

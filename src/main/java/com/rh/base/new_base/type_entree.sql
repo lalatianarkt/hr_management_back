@@ -1,5 +1,4 @@
 INSERT INTO type_entree (id, libelle, created_at, modified_at) VALUES
-('TE08', 'Autre', NOW(), NOW());
 ('TE01', 'Recrutement externe', NOW(), NULL),
 ('TE02', 'Stage suivi d''embauche', NOW(), NULL),
 ('TE03', 'Mutation interne', NOW(), NULL),

@@ -35,6 +35,9 @@ public class DemandeConge {
     @Column(name = "decision_manager")
     private Integer decisionManager;
 
+    @Column(name = "statut")
+    private Integer statut;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -133,30 +136,15 @@ public class DemandeConge {
     public Employe getEmploye() { return employe; }
     public void setEmploye(Employe employe) { this.employe = employe; }
 
-    public TypeConge getTypeConge() {
-        return typeConge;
-    }
-
-    public void setTypeConge(TypeConge typeConge) {
-        this.typeConge = typeConge;
-    }
-
-    public LocalDate getDateValidation() {
-        return dateValidation;
-    }
-
-    public void setDateValidation(LocalDate dateValidation) {
-        this.dateValidation = dateValidation;
-    }
-
-    public String getCommentaireAnnulation() {
-        return commentaireAnnulation;
-    }
-
-    public void setCommentaireAnnulation(String commentaireAnnulation) {
-        this.commentaireAnnulation = commentaireAnnulation;
-    }
-
+    public TypeConge getTypeConge() {return typeConge;}
+    public void setTypeConge(TypeConge typeConge) {this.typeConge = typeConge;}
+    public LocalDate getDateValidation() {return dateValidation;}
+    public void setDateValidation(LocalDate dateValidation) {this.dateValidation = dateValidation;}
+    public String getCommentaireAnnulation() {return commentaireAnnulation;}
+    public void setCommentaireAnnulation(String commentaireAnnulation) {this.commentaireAnnulation = commentaireAnnulation;}
+    public Integer getStatut() {return statut;}
+    public void setStatut(Integer statut) {this.statut = statut;}
+    
     
 
     

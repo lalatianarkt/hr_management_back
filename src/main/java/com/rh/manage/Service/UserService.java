@@ -67,7 +67,7 @@ public class UserService {
     }
     
     public Optional<User> findByEmployeId(String employeId) {
-        return userRepository.findByEmployeId(employeId);
+        return userRepository.findByEmployeIdAndStatut(employeId, 1);
     }
     
     public User save(User user) {
@@ -86,65 +86,65 @@ public class UserService {
         return userRepository.findById(id);
     }
 
-    public List<UserListDTO> getAllUsersForAdminList() {
-        List<User> users = userRepository.findAllWithEmployeAndTypeUser();
-        List<UserListDTO> result = new ArrayList<>();
+    // public List<UserListDTO> getAllUsersForAdminList() {
+    //     List<User> users = userRepository.findAllWithEmployeAndTypeUser();
+    //     List<UserListDTO> result = new ArrayList<>();
 
-        for (User user : users) {
-            Employe employe = user.getEmploye();
-            InfosProfessionnelles infosPro = infosProfessionnellesService.findInfosProfessionnellesByIdEmploye(employe.getId());
-            String departement = "Non assigné";
-            String role = "Non défini";
+    //     for (User user : users) {
+    //         Employe employe = user.getEmploye();
+    //         InfosProfessionnelles infosPro = infosProfessionnellesService.findInfosProfessionnellesByIdEmploye(employe.getId());
+    //         String departement = "Non assigné";
+    //         String role = "Non défini";
 
-            TypeUser typeUser = user.getTypeUser();
-            if (typeUser == null) {
-                typeUser = userRoleService.getPrimaryRoleForUser(user.getId());
-            }
-            if (typeUser != null) {
-                role = typeUser.getType();
-            }
+    //         TypeUser typeUser = user.getTypeUser();
+    //         if (typeUser == null) {
+    //             typeUser = userRoleService.getPrimaryRoleForUser(user.getId());
+    //         }
+    //         if (typeUser != null) {
+    //             role = typeUser.getType();
+    //         }
 
-            if (infosPro != null && infosPro.getDepartement() != null) {
-                departement = infosPro.getDepartement().getNom();
-            }
+    //         if (infosPro != null && infosPro.getDepartement() != null) {
+    //             departement = infosPro.getDepartement().getNom();
+    //         }
 
-            result.add(new UserListDTO(
-                user.getId(),
-                employe.getNom(),
-                employe.getPrenom(),
-                role,
-                departement,
-                user.getStatut()
-            ));
-        }
+    //         result.add(new UserListDTO(
+    //             user.getId(),
+    //             employe.getNom(),
+    //             employe.getPrenom(),
+    //             role,
+    //             departement,
+    //             user.getStatut()
+    //         ));
+    //     }
 
-        return result;
-    }
+    //     return result;
+    // }
 
-    public User updateUserStatut(String userId, Integer statut) {
-        if (statut == null || (statut != 1 && statut != 2)) {
-            throw new IllegalArgumentException("Statut invalide. Utilisez 1 pour accepter ou 2 pour refuser.");
-        }
+    // public User updateUserStatut(String userId, Integer statut) {
+    //     if (statut == null || (statut != 1 && statut != 2)) {
+    //         throw new IllegalArgumentException("Statut invalide. Utilisez 1 pour accepter ou 2 pour refuser.");
+    //     }
 
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+    //     User user = userRepository.findById(userId)
+    //         .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-        TypeUser typeUser = user.getTypeUser();
-        if (typeUser == null) {
-            typeUser = userRoleService.getPrimaryRoleForUser(user.getId());
-        }
-        if (typeUser == null || !"Admin".equalsIgnoreCase(typeUser.getType())) {
-            throw new IllegalArgumentException("Cette action est réservée aux utilisateurs de type Admin.");
-        }
+    //     TypeUser typeUser = user.getTypeUser();
+    //     if (typeUser == null) {
+    //         typeUser = userRoleService.getPrimaryRoleForUser(user.getId());
+    //     }
+    //     if (typeUser == null || !"Admin".equalsIgnoreCase(typeUser.getType())) {
+    //         throw new IllegalArgumentException("Cette action est réservée aux utilisateurs de type Admin.");
+    //     }
 
-        if (user.getStatut() == null || user.getStatut() != 0) {
-            throw new IllegalArgumentException("Seuls les utilisateurs Admin en attente peuvent être acceptés ou refusés.");
-        }
+    //     if (user.getStatut() == null || user.getStatut() != 0) {
+    //         throw new IllegalArgumentException("Seuls les utilisateurs Admin en attente peuvent être acceptés ou refusés.");
+    //     }
 
-        user.setStatut(statut);
-        user.setModifiedAt(LocalDateTime.now());
-        return userRepository.save(user);
-    }
+    //     user.setStatut(statut);
+    //     user.setModifiedAt(LocalDateTime.now());
+    //     return userRepository.save(user);
+    // }
 
     // public Map<String, Object> authenticateUser(UserRequest userRequest) throws Exception, AuthenticationException, ResourceNotFoundException {
     //     User user = authenticate(userRequest.getUser());
@@ -224,8 +224,70 @@ public class UserService {
     //     return utilisateur;
     // } 
 
+    // public Map<String, Object> authenticateUser(UserRequest userRequest) throws Exception, AuthenticationException, ResourceNotFoundException {
+    //     User user = authenticate(userRequest.getUser());
+    //     System.out.println("idUser : " + user.getId());
+    //     if (user == null) {
+    //         throw new AuthenticationException("Identifiants invalides");
+    //     }
+        
+    //     Employe employe = employeService.getById(user.getEmploye().getId())
+    //         .orElseThrow(() -> new ResourceNotFoundException("Employé non trouvé"));
+
+    //     InfosProfessionnelles infosPro = infosProfessionnellesService.findInfosProfessionnellesByIdEmploye(employe.getId());
+        
+    //     // Récupérer tous les rôles actifs de l'utilisateur
+    //     List<UserRole> listeUserRoles = roleUserService.getUserRolesByUserIdAndStatut(user.getId(), 1);
+    //     System.out.println("listeUserRoles size++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ : " + listeUserRoles.size());
+        
+    //     if (listeUserRoles.isEmpty()) {
+    //         throw new ResourceNotFoundException("Aucun rôle trouvé pour cet utilisateur");
+    //     }
+        
+    //     String jwt = jwtService.generateToken(user, userRequest.getTypeUser() != null ? userRequest.getTypeUser() : listeUserRoles.get(0).getTypeUser().getType());
+    //     Token token = tokenService.generateToken(user, "AUTH", jwt);
+        
+    //     Map<String, Object> response = new HashMap<>();
+    //     response.put("status", 200);
+    //     response.put("message", "Authentification réussie");
+    //     response.put("token", token.getTokenGenere());
+    //     response.put("infosPro", infosPro);
+        
+    //     // Si l'utilisateur a plusieurs rôles, on lui envoie la liste des rôles
+    //     if (listeUserRoles.size() > 1) {
+    //         List<Map<String, Object>> rolesList = new ArrayList<>();
+    //         for (UserRole userRole : listeUserRoles) {
+    //             Map<String, Object> roleInfo = new HashMap<>();
+    //             roleInfo.put("id", userRole.getUser().getId());
+    //             roleInfo.put("type", userRole.getTypeUser().getType());
+    //             roleInfo.put("libelle", getRoleLibelle(userRole.getTypeUser().getType()));
+    //             roleInfo.put("path", determineRedirectPath(userRole.getTypeUser().getType()));
+    //             response.put("user", buildUserResponse(user, employe, userRole.getTypeUser().getType()));
+    //             rolesList.add(roleInfo);
+    //         }
+            
+    //         response.put("hasMultipleRoles", true);
+    //         response.put("roles", rolesList);
+    //         response.put("needsRoleSelection", true);
+    //         response.put("message", "Plusieurs rôles détectés. Veuillez choisir un rôle.");
+            
+    //     } else {
+    //         // Un seul rôle, redirection directe
+    //         TypeUser typeUser = listeUserRoles.get(0).getTypeUser();
+    //         String path = determineRedirectPath(typeUser.getType());
+            
+    //         response.put("hasMultipleRoles", false);
+    //         response.put("path", path);
+    //         response.put("role", typeUser.getType());
+    //         response.put("message", "Authentification réussie");
+    //     }
+    //     return response;
+    // }
+
     public Map<String, Object> authenticateUser(UserRequest userRequest) throws Exception, AuthenticationException, ResourceNotFoundException {
         User user = authenticate(userRequest.getUser());
+        System.out.println("idUser : " + user.getId());
+        
         if (user == null) {
             throw new AuthenticationException("Identifiants invalides");
         }
@@ -236,13 +298,18 @@ public class UserService {
         InfosProfessionnelles infosPro = infosProfessionnellesService.findInfosProfessionnellesByIdEmploye(employe.getId());
         
         // Récupérer tous les rôles actifs de l'utilisateur
-        List<UserRole> listeUserRoles = roleUserService.getTypeUserByIdUserAndStatut(user.getId(), 0);
+        List<UserRole> listeUserRoles = roleUserService.getUserRolesByUserIdAndStatut(user.getId(), 1);
+        System.out.println("Nombre de rôles trouvés : " + listeUserRoles.size());
         
         if (listeUserRoles.isEmpty()) {
-            throw new ResourceNotFoundException("Aucun rôle trouvé pour cet utilisateur");
+            throw new ResourceNotFoundException("Aucun rôle actif trouvé pour cet utilisateur");
         }
         
-        String jwt = jwtService.generateToken(user, infosPro);
+        // Déterminer le rôle par défaut (le premier de la liste)
+        String defaultRole = listeUserRoles.get(0).getTypeUser().getType();
+        
+        // Générer le token avec le rôle par défaut
+        String jwt = jwtService.generateToken(user, defaultRole);
         Token token = tokenService.generateToken(user, "AUTH", jwt);
         
         Map<String, Object> response = new HashMap<>();
@@ -250,35 +317,23 @@ public class UserService {
         response.put("message", "Authentification réussie");
         response.put("token", token.getTokenGenere());
         response.put("infosPro", infosPro);
+        response.put("user", buildUserResponse(user, employe, defaultRole));
         
-        // Si l'utilisateur a plusieurs rôles, on lui envoie la liste des rôles
-        if (listeUserRoles.size() > 1) {
-            List<Map<String, Object>> rolesList = new ArrayList<>();
-            for (UserRole userRole : listeUserRoles) {
-                Map<String, Object> roleInfo = new HashMap<>();
-                roleInfo.put("id", userRole.getUser().getId());
-                roleInfo.put("type", userRole.getTypeUser().getType());
-                roleInfo.put("libelle", getRoleLibelle(userRole.getTypeUser().getType()));
-                roleInfo.put("path", determineRedirectPath(userRole.getTypeUser().getType()));
-                response.put("user", buildUserResponse(user, employe, userRole.getTypeUser().getType()));
-                rolesList.add(roleInfo);
-            }
-            
-            response.put("hasMultipleRoles", true);
-            response.put("roles", rolesList);
-            response.put("needsRoleSelection", true);
-            response.put("message", "Plusieurs rôles détectés. Veuillez choisir un rôle.");
-            
-        } else {
-            // Un seul rôle, redirection directe
-            TypeUser typeUser = listeUserRoles.get(0).getTypeUser();
-            String path = determineRedirectPath(typeUser.getType());
-            
-            response.put("hasMultipleRoles", false);
-            response.put("path", path);
-            response.put("role", typeUser.getType());
-            response.put("message", "Authentification réussie");
+        // Toujours envoyer la liste des rôles disponibles
+        List<Map<String, Object>> rolesList = new ArrayList<>();
+        for (UserRole userRole : listeUserRoles) {
+            Map<String, Object> roleInfo = new HashMap<>();
+            roleInfo.put("id", userRole.getTypeUser().getId());
+            roleInfo.put("type", userRole.getTypeUser().getType());
+            roleInfo.put("libelle", getRoleLibelle(userRole.getTypeUser().getType()));
+            roleInfo.put("path", determineRedirectPath(userRole.getTypeUser().getType()));
+            rolesList.add(roleInfo);
         }
+        
+        response.put("hasMultipleRoles", listeUserRoles.size() > 1);
+        response.put("roles", rolesList);
+        response.put("currentRole", defaultRole);
+        response.put("path", determineRedirectPath(defaultRole));
         
         return response;
     }
@@ -293,10 +348,10 @@ public class UserService {
             utilisateur = optionalUser.get();
         }
 
-        if (utilisateur.getStatut() != 1) {
+        if (utilisateur.getStatut() != 1) { 
             throw new Exception("Votre compte est en cours de validation");
-        }
-
+        }       
+        
         if (!BCrypt.checkpw(userRequest.getPassword(), utilisateur.getPassword())) {
             throw new Exception("Mot de passe incorrect !");
         }
@@ -304,19 +359,16 @@ public class UserService {
         employeService.getById(utilisateur.getEmploye().getId())
             .orElseThrow(() -> new ResourceNotFoundException("Employé non trouvé"));
 
-        // Récupérer tous les rôles actifs de l'utilisateur
-        List<UserRole> typeUsers = roleUserService.getTypeUserByIdUserAndStatut(utilisateur.getId(), 0);
+        List<UserRole> typeUsers = roleUserService.getUserRolesByUserIdAndStatut(utilisateur.getId(), 1);
         
         if (!typeUsers.isEmpty()) {
-            // On ne définit pas de typeUser par défaut, on laisse la logique de sélection
-            // L'utilisateur pourra choisir parmi les rôles disponibles
             utilisateur.setUserRoles(typeUsers);
         } else {
             throw new ResourceNotFoundException("Aucun rôle actif trouvé pour cet utilisateur");
         }
         
         return utilisateur;
-    }
+    } 
 
     // Méthode pour sélectionner un rôle après authentification
     public Map<String, Object> selectUserRole(String userId, String selectedRoleType) throws Exception {
@@ -324,7 +376,7 @@ public class UserService {
             .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé"));
         
         // Vérifier que l'utilisateur a bien ce rôle
-        List<UserRole> userRoles = roleUserService.getTypeUserByIdUserAndStatut(userId, 0);
+        List<UserRole> userRoles = roleUserService.getUserRolesByUserIdAndStatut(userId, 0);
         boolean hasRole = userRoles.stream()
             .anyMatch(ur -> ur.getTypeUser().getType().equals(selectedRoleType));
         
@@ -339,7 +391,7 @@ public class UserService {
         InfosProfessionnelles infosPro = infosProfessionnellesService.findInfosProfessionnellesByIdEmploye(employe.getId());
         
         // Générer un nouveau token avec le rôle sélectionné
-        String jwt = jwtService.generateToken(user, infosPro);
+        String jwt = jwtService.generateToken(user, selectedRoleType);
         Token token = tokenService.generateToken(user, "AUTH", jwt);
         
         String path = determineRedirectPath(selectedRoleType);
@@ -372,9 +424,9 @@ public class UserService {
         }
     }
 
-    private String determineRedirectPath(String userType) {
+    public String determineRedirectPath(String userType) {
         switch (userType) {
-            case "Admin":
+            case "Admin_RH":
                 return "/dashboard-RH/";
             case "Manager":
                 return "/dashboard-Manager/";
@@ -408,45 +460,71 @@ public class UserService {
     }
 
     @Transactional
-    public void validateCountByEmail(String email, String tokenInput) throws Exception{
+    public void validateCountByEmail(String email, String tokenInput) throws Exception {
         Optional<User> userOpt = findByEmail(email);
-            if (userOpt.isEmpty()) {
-                throw new Exception("Utilisateur non trouvé");
-            }
+        if (userOpt.isEmpty()) {
+            throw new Exception("Utilisateur non trouvé");
+        }
 
-            User user = userOpt.get();
-            Token token = tokenService.getDernierTokenActiveParUser(user);
+        User user = userOpt.get();
+        Token token = tokenService.getDernierTokenActiveParUser(user);
 
-            if (token == null) {
-                throw new Exception("Aucun token trouvé pour cet utilisateur");
-            }
+        if (token == null) {
+            throw new Exception("Aucun token trouvé pour cet utilisateur");
+        }
 
-            LocalDateTime now = LocalDateTime.now();
-            System.out.println("now amfiry : " + now);
-            System.out.println("expiredAt : " + token.getExpiresAt());
-            System.out.println("Aorès ve : " + now.isAfter(token.getExpiresAt()));
-            if (now.isAfter(token.getExpiresAt())) {
-                throw new Exception("Le token a expiré. Veuillez renvoyer un nouveau token.");
-            }
+        LocalDateTime now = LocalDateTime.now();
+        System.out.println("now amfiry : " + now);
+        System.out.println("expiredAt : " + token.getExpiresAt());
+        System.out.println("Aorès ve : " + now.isAfter(token.getExpiresAt()));
+        
+        if (now.isAfter(token.getExpiresAt())) {
+            throw new Exception("Le token a expiré. Veuillez renvoyer un nouveau token.");
+        }
 
-            if (!token.getTokenGenere().equals(tokenInput)) {
-                throw new Exception("Token invalide. Veuillez vérifier votre email.");
-            }
+        if (!token.getTokenGenere().equals(tokenInput)) {
+            throw new Exception("Token invalide. Veuillez vérifier votre email.");
+        }
 
-            token.setIsActive(0); 
-            tokenService.update(token);
+        token.setIsActive(0); 
+        tokenService.update(token);
 
-            TypeUser typeUser = user.getTypeUser();
-            if (typeUser == null) {
-                typeUser = userRoleService.getPrimaryRoleForUser(user.getId());
-            }
-            if(typeUser != null && typeUser.getType().equalsIgnoreCase("Admin")){
-                user.setStatut(2);
-            } else{
-                user.setStatut(1);
-            }            
-            user.setModifiedAt(LocalDateTime.now());
-            save(user);
+        // Récupération des UserRole pour cet utilisateur
+        List<UserRole> userRoles = userRoleService.getByUserId(user.getId());
+        
+        // Vérification si l'utilisateur a des rôles
+        if (userRoles == null || userRoles.isEmpty()) {
+            throw new Exception("Aucun rôle trouvé pour cet utilisateur");
+        }
+        
+        // // Désactivation de tous les UserRole
+        // for (UserRole userRole : userRoles) {
+        //     userRole.setStatut(0); 
+        //     userRoleService.update(userRole);
+        // }
+        
+        // Récupération du type d'utilisateur principal (ex: le premier rôle actif ou un rôle spécifique)
+        TypeUser typeUser = null;
+        
+        // Essayons d'abord de récupérer via user.getTypeUser() si cette relation existe
+        // Sinon, on récupère le premier rôle de la liste
+        if (userRoles != null && !userRoles.isEmpty()) {
+            // Vous pouvez choisir un rôle spécifique, par exemple le premier
+            typeUser = userRoles.get(0).getTypeUser();
+            
+            // Ou si vous avez une méthode pour récupérer le rôle principal
+            // typeUser = userRoleService.getPrimaryRoleForUser(user.getId());
+        }
+        
+        // Définition du statut de l'utilisateur en fonction de son rôle
+        if (typeUser != null && "Admin".equalsIgnoreCase(typeUser.getType())) {
+            user.setStatut(2); // Statut pour Admin
+        } else {
+            user.setStatut(1); // Statut pour les autres utilisateurs
+        }
+        
+        user.setModifiedAt(LocalDateTime.now());
+        save(user);
     }
 
 
@@ -480,6 +558,7 @@ public class UserService {
     }
 
     public User registerUser(User user) {
+        // Validation de l'email
         if(user.getEmail() == null || user.getEmail().isBlank()) {
             throw new RuntimeException("L'email ne peut pas être vide");
         }
@@ -493,45 +572,69 @@ public class UserService {
             throw new RuntimeException("Email déjà utilisé");
         }
         
+        // Vérification de l'existence de l'employé
         Optional<Employe> employeOpt = employeService.getByEmail(user.getEmail());
         if (employeOpt.isEmpty()) {
             throw new RuntimeException("Aucun employé trouvé avec cet email: " + user.getEmail());
         }
         Employe employe = employeOpt.get();
-
         user.setEmploye(employe);
 
-        TypeUser typeUser;
-
-        if (managerService.isManager(employe)) {
-            typeUser = typeUserService.getByType("Manager");
-        } 
-        else if (user.getTypeUser() != null && "Admin".equals(user.getTypeUser().getType())) {
-            typeUser = typeUserService.getByType("Admin");
-        } else if(user.getTypeUser() != null && "IT".equals(user.getTypeUser().getType())) {
-            typeUser = typeUserService.getByType("IT");
-        } else {
-            typeUser = typeUserService.getByType("Employe");
-        }
-
-        user.setTypeUser(typeUser);
-
+        // Vérification des informations professionnelles
         Optional<InfosProfessionnelles> infosProOpt = infosProfessionnellesService
                 .getByIdEmploye(employe.getId());
         if(infosProOpt.isEmpty()) {
             throw new RuntimeException("Le matricule n'existe pas. Veuillez mettre le bon matricule");
         }
-        else{
-            if(userRepository.existsByEmploye_Id(infosProOpt.get().getEmploye().getId())) {
-                throw new RuntimeException("Un utilisateur est déjà associé à ce matricule");
+        
+        // Vérification qu'un utilisateur n'est pas déjà associé à cet employé
+        if(userRepository.existsByEmploye_Id(employe.getId())) {
+            throw new RuntimeException("Un utilisateur est déjà associé à cet employé");
+        }
+        
+        // Détermination du type d'utilisateur (rôle)
+        TypeUser typeUser = determineUserRole(employe, user);
+        
+        // Hashage du mot de passe
+        String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
+        user.setPassword(hashedPassword);
+        
+        // Sauvegarde de l'utilisateur
+        User savedUser = userRepository.save(user);
+        
+        // Création du UserRole (liaison entre l'utilisateur et le type)
+        UserRole userRole = new UserRole();
+        userRole.setUser(savedUser);
+        userRole.setTypeUser(typeUser);
+        userRole.setStatut(1); // 1 = actif
+        userRole.setCreatedAt(LocalDateTime.now());
+        userRoleService.create(userRole);
+        
+        return savedUser;
+    }
+
+    // Méthode pour déterminer le rôle de l'utilisateur
+    private TypeUser determineUserRole(Employe employe, User user) {
+        // Vérifier d'abord si l'employé est manager
+        if (managerService.isManager(employe)) {
+            return typeUserService.getByType("Manager");
+        } 
+        // Ensuite vérifier si un rôle a été spécifié dans l'objet user (pour Admin ou IT)
+        else if (user.getUserRoles() != null && !user.getUserRoles().isEmpty()) {
+            // Récupérer le type depuis les userRoles si disponibles
+            TypeUser specifiedType = user.getUserRoles().get(0).getTypeUser();
+            if (specifiedType != null) {
+                String typeName = specifiedType.getType();
+                if ("Admin".equals(typeName)) {
+                    return typeUserService.getByType("Admin");
+                } else if ("IT".equals(typeName)) {
+                    return typeUserService.getByType("IT");
+                }
             }
         }
         
-        String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
-        user.setPassword(hashedPassword);
-        User savedUser = userRepository.save(user);
-        userRoleService.assignRole(savedUser.getId(), typeUser);
-        return savedUser;
+        // Par défaut, rôle Employe
+        return typeUserService.getByType("Employe");
     }
     
 }

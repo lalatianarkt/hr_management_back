@@ -33,8 +33,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-
-
 @RestController
 @RequestMapping("/api/demandes-conge")
 // @CrossOrigin(origins = "*")
@@ -83,6 +81,7 @@ public class DemandeCongeController {
             } 
         
         } catch (Exception e) {
+            System.out.println("error+++++++++++++++++++++++++++ : " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Erreur lors de la récupération des demandes par employé : " + e.getMessage());
@@ -183,9 +182,7 @@ public class DemandeCongeController {
         try {
             String token = authHeader.substring(7);
             Claims claims = jwtService.validateToken(token);
-            String idEmploye = claims.get("idEmploye", String.class);
-            demande.setDecisionManager(0);
-            DemandeConge savedDemande = service.enregistrer(demande, idEmploye);
+            DemandeConge savedDemande = service.enregistrer(demande, claims);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedDemande);
         } catch (IllegalArgumentException e) {
             // Erreur de validation
@@ -304,24 +301,27 @@ public class DemandeCongeController {
         }
     }
 
-    @PutMapping("validate/{id}")
-    public ResponseEntity<?> validateDemandeConge(@PathVariable String id) {
+    
+    @PutMapping("/validate/{id}")
+    public ResponseEntity<?> validateDemandeConge(@PathVariable String id, @RequestBody DemandeConge demande, 
+                                                  @RequestHeader("Authorization") String authHeader) {
         try {
-            DemandeConge updated = service.validerDemande(id);
-            return ResponseEntity.ok(updated); // 200 OK
-
+            String token = authHeader.substring(7);
+            Claims claims = jwtService.validateToken(token);
+            demande.setId(id);
+            DemandeConge updated = service.validerDemande(demande, claims);
+            return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
-            // Erreur métier (ex: demande non trouvée)
+            e.printStackTrace();
             return ResponseEntity.status(404).body(e.getMessage());
-
         } catch (Exception e) {
-            // Erreur interne (ex: problème de base de données)
+            e.printStackTrace();
             return ResponseEntity.status(500)
                     .body("Erreur interne lors de la validation de la demande : " + e.getMessage());
         }
     }
 
-    @PutMapping("refuser/{id}")
+    @PutMapping("/refuser/{id}")
     public ResponseEntity<?> refuserDemandeConge(@PathVariable String id) {
         try {
             DemandeConge updated = service.refuserDemande(id);

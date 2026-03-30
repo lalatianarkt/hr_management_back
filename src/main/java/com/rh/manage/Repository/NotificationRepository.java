@@ -1,6 +1,7 @@
 package com.rh.manage.Repository;
 
-import com.rh.manage.Model.Notification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -8,69 +9,63 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import com.rh.manage.Model.Notification;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface NotificationRepository extends JpaRepository<Notification, Integer> {
+public interface NotificationRepository extends JpaRepository<Notification, Long> {
     
-    // Recherche par utilisateur concerné
-    List<Notification> findByConcernedUserId(String concernedUserId);
+    // Trouver les notifications par destinataire
+    List<Notification> findByIdUtilisateurDestinataireOrderByCreatedAtDesc(String idUtilisateurDestinataire);
     
-    // Recherche par email destinataire
-    List<Notification> findByRecipientEmail(String recipientEmail);
+    Page<Notification> findByIdUtilisateurDestinataireOrderByCreatedAtDesc(String idUtilisateurDestinataire, Pageable pageable);
     
-    // Recherche par manager
-    List<Notification> findByManagerId(String managerId);
+    // Trouver les notifications non lues par destinataire
+    List<Notification> findByIdUtilisateurDestinataireAndEstLuFalseOrderByCreatedAtDesc(String idUtilisateurDestinataire);
     
-    // Recherche par expéditeur
-    List<Notification> findBySenderUserId(String senderUserId);
+    // Compter les notifications non lues
+    @Query("SELECT COUNT(n) FROM Notification n WHERE n.idUtilisateurDestinataire = :userId AND n.estLu = false")
+    long countNonLuesByUtilisateur(@Param("userId") String userId);
     
-    // Recherche par statut
-    List<Notification> findByStatus(Integer status);
-    
-    // Recherche par date d'envoi
-    List<Notification> findBySentDate(LocalDate sentDate);
-    
-    // Recherche par période
-    List<Notification> findBySentDateBetween(LocalDate startDate, LocalDate endDate);
-    
-    // Recherche combinée : utilisateur concerné + statut
-    List<Notification> findByConcernedUserIdAndStatus(String concernedUserId, Integer status);
-    
-    // Recherche combinée : manager + statut
-    List<Notification> findByManagerIdAndStatus(String managerId, Integer status);
-    
-    // Requête personnalisée JPQL
-    @Query("SELECT n FROM Notification n WHERE n.managerId = :managerId AND n.status = :status ORDER BY n.sentDate DESC")
-    List<Notification> findNotificationsByManagerAndStatus(@Param("managerId") String managerId, 
-                                                          @Param("status") Integer status);
-    
-    // Mise à jour du statut
+    // Marquer comme lue
     @Modifying
     @Transactional
-    @Query("UPDATE Notification n SET n.status = :status WHERE n.id = :id")
-    int updateStatus(@Param("id") Integer id, @Param("status") Integer status);
+    @Query("UPDATE Notification n SET n.estLu = true, n.modifiedAt = CURRENT_TIMESTAMP WHERE n.id = :id")
+    void marquerCommeLue(@Param("id") Long id);
     
-    // Compter les notifications non lues pour un utilisateur (status = 0)
-    @Query("SELECT COUNT(n) FROM Notification n WHERE n.concernedUserId = :userId AND n.status = 0")
-    long countUnreadNotifications(@Param("userId") String userId);
-    
-    // Supprimer les anciennes notifications
+    // Marquer toutes les notifications d'un utilisateur comme lues
     @Modifying
     @Transactional
-    @Query("DELETE FROM Notification n WHERE n.sentDate < :date")
-    int deleteOldNotifications(@Param("date") LocalDate date);
+    @Query("UPDATE Notification n SET n.estLu = true, n.modifiedAt = CURRENT_TIMESTAMP WHERE n.idUtilisateurDestinataire = :userId AND n.estLu = false")
+    void marquerToutCommeLu(@Param("userId") String userId);
     
-    // Dernières notifications pour un utilisateur
-    List<Notification> findTop10ByConcernedUserIdOrderBySentDateDescCreatedAtDesc(String concernedUserId);
+    // Supprimer les notifications plus anciennes qu'une date
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM Notification n WHERE n.createdAt < :date")
+    void deleteByCreatedAtBefore(@Param("date") LocalDateTime date);
     
-    // Recherche par mot-clé dans le message
-    @Query("SELECT n FROM Notification n WHERE LOWER(n.message) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    List<Notification> searchByKeyword(@Param("keyword") String keyword);
-
-
-    // Recherche par mot-clé dans le message
-    @Query("SELECT n FROM Notification n WHERE LOWER(n.message) LIKE LOWER(CONCAT('%', :motCle, '%'))")
-    List<Notification> rechercherParMotCle(@Param("motCle") String motCle);
+    // Supprimer les notifications d'un utilisateur
+    @Modifying
+    @Transactional
+    void deleteByIdUtilisateurDestinataire(String idUtilisateurDestinataire);
+    
+    // Trouver par référence
+    List<Notification> findByReferenceTypeAndReferenceId(String referenceType, String referenceId);
+    
+    // Trouver par expéditeur
+    List<Notification> findByIdUtilisateurExpediteurOrderByCreatedAtDesc(String idUtilisateurExpediteur);
+    
+    // Recherche avancée
+    @Query("SELECT n FROM Notification n WHERE " +
+           "(:userId IS NULL OR n.idUtilisateurDestinataire = :userId) AND " +
+           "(:estLu IS NULL OR n.estLu = :estLu) AND " +
+           "(:referenceType IS NULL OR n.referenceType = :referenceType) " +
+           "ORDER BY n.createdAt DESC")
+    Page<Notification> rechercherNotifications(@Param("userId") String userId,
+                                               @Param("estLu") Boolean estLu,
+                                               @Param("referenceType") String referenceType,
+                                               Pageable pageable);
 }

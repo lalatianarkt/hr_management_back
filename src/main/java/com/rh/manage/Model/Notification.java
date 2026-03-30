@@ -1,99 +1,66 @@
 package com.rh.manage.Model;
 
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import jakarta.persistence.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "notifications")
 public class Notification {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
     
-    @Column(name = "email_destinateur", length = 50)
-    private String recipientEmail;
-    
-    @Column(name = "date_envoi")
-    private LocalDate sentDate;
-
-    @Column(name = "titre", length = 500)
-    private String title;
-
-    @Column(columnDefinition = "TEXT", name = "message")
+    @Column(columnDefinition = "TEXT")
     private String message;
     
-    @Column(name = "id_manager", nullable = false)
-    private String managerId;
+    @Column(name = "id_utilisateur_expediteur", length = 50)
+    private String idUtilisateurExpediteur;
     
-    @Column(name = "id_utilisateur_conserne", nullable = false)
-    private String concernedUserId;
+    @Column(name = "id_utilisateur_destinataire", length = 50)
+    private String idUtilisateurDestinataire;
     
-    @Column(name = "id_utilisateur_destinateur", nullable = false)
-    private String senderUserId;
+    @Column(length = 50)
+    private String lien;
     
-    @Column(name = "statut")
-    private Integer status;
+    @Column(name = "reference_type", length = 50)
+    private String referenceType;
     
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "reference_id", length = 150)
+    private String referenceId;
+    
+    @Column(name = "est_lu")
+    private Boolean estLu = false;
+    
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
     
-    @UpdateTimestamp
     @Column(name = "modified_at")
     private LocalDateTime modifiedAt;
     
     // Constructeurs
     public Notification() {}
     
-    public Notification(String recipientEmail, LocalDate sentDate, String message, 
-                       String managerId, String concernedUserId, 
-                       String senderUserId, Integer status) {
-        this.recipientEmail = recipientEmail;
-        this.sentDate = sentDate;
+    public Notification(String message, String idUtilisateurExpediteur, String idUtilisateurDestinataire, 
+                       String lien, String referenceType, String referenceId) {
         this.message = message;
-        this.managerId = managerId;
-        this.concernedUserId = concernedUserId;
-        this.senderUserId = senderUserId;
-        this.status = status;
+        this.idUtilisateurExpediteur = idUtilisateurExpediteur;
+        this.idUtilisateurDestinataire = idUtilisateurDestinataire;
+        this.lien = lien;
+        this.referenceType = referenceType;
+        this.referenceId = referenceId;
+        this.estLu = false;
+        this.createdAt = LocalDateTime.now();
+        this.modifiedAt = LocalDateTime.now();
     }
     
     // Getters et Setters
-    
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
     
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
-    }
-    
-    public String getRecipientEmail() {
-        return recipientEmail;
-    }
-    
-    public void setRecipientEmail(String recipientEmail) {
-        this.recipientEmail = recipientEmail;
-    }
-    
-    public LocalDate getSentDate() {
-        return sentDate;
-    }
-    
-    public void setSentDate(LocalDate sentDate) {
-        this.sentDate = sentDate;
-    }
-
-
-    public String getTitle() {
-        return title;
-    }
-    
-    public void setTitle(String title) {
-        this.title = title;
     }
     
     public String getMessage() {
@@ -104,36 +71,52 @@ public class Notification {
         this.message = message;
     }
     
-    public String getManagerId() {
-        return managerId;
+    public String getIdUtilisateurExpediteur() {
+        return idUtilisateurExpediteur;
     }
     
-    public void setManagerId(String managerId) {
-        this.managerId = managerId;
+    public void setIdUtilisateurExpediteur(String idUtilisateurExpediteur) {
+        this.idUtilisateurExpediteur = idUtilisateurExpediteur;
     }
     
-    public String getConcernedUserId() {
-        return concernedUserId;
+    public String getIdUtilisateurDestinataire() {
+        return idUtilisateurDestinataire;
     }
     
-    public void setConcernedUserId(String concernedUserId) {
-        this.concernedUserId = concernedUserId;
+    public void setIdUtilisateurDestinataire(String idUtilisateurDestinataire) {
+        this.idUtilisateurDestinataire = idUtilisateurDestinataire;
     }
     
-    public String getSenderUserId() {
-        return senderUserId;
+    public String getLien() {
+        return lien;
     }
     
-    public void setSenderUserId(String senderUserId) {
-        this.senderUserId = senderUserId;
+    public void setLien(String lien) {
+        this.lien = lien;
     }
     
-    public Integer getStatus() {
-        return status;
+    public String getReferenceType() {
+        return referenceType;
     }
     
-    public void setStatus(Integer status) {
-        this.status = status;
+    public void setReferenceType(String referenceType) {
+        this.referenceType = referenceType;
+    }
+    
+    public String getReferenceId() {
+        return referenceId;
+    }
+    
+    public void setReferenceId(String referenceId) {
+        this.referenceId = referenceId;
+    }
+    
+    public Boolean getEstLu() {
+        return estLu;
+    }
+    
+    public void setEstLu(Boolean estLu) {
+        this.estLu = estLu;
     }
     
     public LocalDateTime getCreatedAt() {
@@ -150,5 +133,20 @@ public class Notification {
     
     public void setModifiedAt(LocalDateTime modifiedAt) {
         this.modifiedAt = modifiedAt;
+    }
+    
+    // Méthodes utilitaires
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        modifiedAt = LocalDateTime.now();
+        if (estLu == null) {
+            estLu = false;
+        }
+    }
+    
+    @PreUpdate
+    protected void onUpdate() {
+        modifiedAt = LocalDateTime.now();
     }
 }

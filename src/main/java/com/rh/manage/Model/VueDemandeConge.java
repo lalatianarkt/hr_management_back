@@ -40,7 +40,10 @@ public class VueDemandeConge {
     
     @Column(name = "nom_complet_employe")
     private String nomCompletEmploye;
-    
+
+    @Column(name = "statut")
+    private Integer statut;
+
     @Column(name = "nom_employe")
     private String nomEmploye;
     
@@ -256,5 +259,13 @@ public class VueDemandeConge {
                 ", matricule='" + matricule + '\'' +
                 ", nomDepartement='" + nomDepartement + '\'' +
                 '}';
+    }
+
+    public Integer getStatut() {
+        return statut;
+    }
+
+    public void setStatut(Integer statut) {
+        this.statut = statut;
     }
 }

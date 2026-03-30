@@ -302,17 +302,6 @@ CREATE TABLE type_temps_travail(
    PRIMARY KEY(id)
 );
 
-CREATE TABLE Notifications(
-   id SERIAL,
-   email_envoye VARCHAR(50) ,
-   date_envoi DATE,
-   created_at TIMESTAMP NOT NULL,
-   modified_at TIMESTAMP,
-   message_notif TEXT,
-   statut INTEGER,
-   PRIMARY KEY(id)
-);
-
 CREATE TABLE mois(
    id SERIAL,
    libelle VARCHAR(30) ,
@@ -371,6 +360,20 @@ CREATE TABLE mouvement_solde_paie(
    nb_conge_dans_paie NUMERIC(15,2)  ,
    nb_conge_dans_mouvement_solde NUMERIC(15,2)  ,
    created_at TIMESTAMP NOT NULL,
+   PRIMARY KEY(id)
+);
+
+CREATE TABLE notifications(
+   id SERIAL,
+   message TEXT,
+   id_utilisateur_expediteur VARCHAR(50) ,
+   id_utilisateur_destinataire VARCHAR(50) ,
+   lien VARCHAR(50) ,
+   reference_type VARCHAR(50) ,
+   reference_id VARCHAR(150) ,
+   estLu BOOLEAN DEFAULT FALSE,
+   created_at TIMESTAMP,
+   modified_at TIMESTAMP,
    PRIMARY KEY(id)
 );
 
@@ -461,24 +464,6 @@ CREATE TABLE Token(
    id_1 VARCHAR(50)  NOT NULL,
    PRIMARY KEY(id),
    FOREIGN KEY(id_1) REFERENCES Users(id)
-);
-
-CREATE TABLE mouvement_solde(
-   id SERIAL,
-   nb_conge_total NUMERIC(10,2)   NOT NULL,
-   nb_conge_restant NUMERIC(10,2)   NOT NULL,
-   nb_conge_pris NUMERIC(10,2)   NOT NULL,
-   mois INTEGER NOT NULL,
-   annee INTEGER NOT NULL,
-   created_at TIMESTAMP NOT NULL,
-   modified_at TIMESTAMP,
-   statut INTEGER NOT NULL,
-   commentaire VARCHAR(255) ,
-   type_mouvement VARCHAR(50) ,
-   date_cloture DATE,
-   id_1 VARCHAR(50)  NOT NULL,
-   PRIMARY KEY(id),
-   FOREIGN KEY(id_1) REFERENCES Employe(id)
 );
 
 CREATE TABLE emergency_contact(

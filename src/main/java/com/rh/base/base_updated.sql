@@ -436,13 +436,13 @@ CREATE TABLE Users(
 );
 
 CREATE TABLE user_role(
-   idUser VARCHAR(50) ,
+   id_user VARCHAR(50) ,
    id_type INTEGER,
    created_at TIMESTAMP NOT NULL,
    modified_at TIMESTAMP,
    statut INTEGER,
-   PRIMARY KEY(idUser, id_type),
-   FOREIGN KEY(idUser) REFERENCES Users(id),
+   PRIMARY KEY(id_user, id_type),
+   FOREIGN KEY(id_user) REFERENCES Users(id),
    FOREIGN KEY(id_type) REFERENCES type_user(id)
 ); 
 
@@ -1242,16 +1242,16 @@ CREATE TABLE mouvement_solde_paie(
    FOREIGN KEY(id_paie) REFERENCES paie(id)
 );
 
-CREATE TABLE Notifications(
+CREATE TABLE notifications(
    id SERIAL,
-   email_destinateur VARCHAR(250) ,
-   date_envoi DATE,
    message TEXT,
-   id_manager INTEGER NOT NULL,
-   id_utilisateur_conserne VARCHAR(250)  NOT NULL,
-   id_utilisateur_destinateur VARCHAR(250)  NOT NULL,
-   statut INTEGER,
-   created_at TIMESTAMP NOT NULL,
+   id_utilisateur_expediteur VARCHAR(50) ,
+   id_utilisateur_destinataire VARCHAR(50) ,
+   lien VARCHAR(50) ,
+   reference_type VARCHAR(50) ,
+   reference_id VARCHAR(150) ,
+   estLu BOOLEAN DEFAULT FALSE,
+   created_at TIMESTAMP,
    modified_at TIMESTAMP,
    PRIMARY KEY(id)
 );

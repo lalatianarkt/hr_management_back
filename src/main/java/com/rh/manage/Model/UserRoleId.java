@@ -1,35 +1,52 @@
 package com.rh.manage.Model;
 
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Column;
 import java.io.Serializable;
 import java.util.Objects;
 
+@Embeddable
 public class UserRoleId implements Serializable {
-    private String idUser;
-    private Integer idType;
-
+    
+    @Column(name = "id_user", length = 50)
+    private String user;  // Propriété nommée "user" (pas userId)
+    
+    @Column(name = "id_type")
+    private Integer typeUser;  // Propriété nommée "typeUser" (pas typeUserId)
+    
     public UserRoleId() {}
-
-    public UserRoleId(String idUser, Integer idType) {
-        this.idUser = idUser;
-        this.idType = idType;
+    
+    public UserRoleId(String user, Integer typeUser) {
+        this.user = user;
+        this.typeUser = typeUser;
     }
-
-    public String getIdUser() { return idUser; }
-    public void setIdUser(String idUser) { this.idUser = idUser; }
-
-    public Integer getIdType() { return idType; }
-    public void setIdType(Integer idType) { this.idType = idType; }
-
+    
+    public String getUser() {
+        return user;
+    }
+    
+    public void setUser(String user) {
+        this.user = user;
+    }
+    
+    public Integer getTypeUser() {
+        return typeUser;
+    }
+    
+    public void setTypeUser(Integer typeUser) {
+        this.typeUser = typeUser;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof UserRoleId)) return false;
         UserRoleId that = (UserRoleId) o;
-        return Objects.equals(idUser, that.idUser) && Objects.equals(idType, that.idType);
+        return Objects.equals(user, that.user) && Objects.equals(typeUser, that.typeUser);
     }
-
+    
     @Override
     public int hashCode() {
-        return Objects.hash(idUser, idType);
+        return Objects.hash(user, typeUser);
     }
 }

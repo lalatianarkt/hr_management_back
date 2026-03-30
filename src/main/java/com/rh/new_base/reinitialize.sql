@@ -1,0 +1,17 @@
+delete from token;
+delete from user_role;
+delete from users;
+delete from mouvement;
+delete from infos_professionnelles;
+delete from employe;
+delete from demande_conge;
+delete from employe;
+delete from solde_annuel;
+delete from mouvement_solde;
+delete from pointage_fille;
+delete from pointage;
+delete from manager;
+delete from paie_fille;
+delete from  paie;
+delete from document_employe;
+delete from employe;

@@ -6,12 +6,17 @@ import com.rh.manage.Model.Employe;
 import com.rh.manage.Model.InfosProfessionnelles;
 import com.rh.manage.Model.Manager;
 import com.rh.manage.Model.MouvementSolde;
+import com.rh.manage.Model.Notification;
 import com.rh.manage.Model.ReglesAnnulationConges;
 import com.rh.manage.Model.Token;
 import com.rh.manage.Model.TypeConge;
 import com.rh.manage.Model.TypeEnumConge;
 import com.rh.manage.Model.User;
+import com.rh.manage.Model.UserRole;
 import com.rh.manage.Repository.DemandeCongeRepository;
+
+import com.rh.manage.Service.EmployeService;
+import io.jsonwebtoken.Claims;
 
 import org.bouncycastle.jcajce.provider.asymmetric.dsa.DSASigner.detDSA;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +26,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -37,7 +43,6 @@ import java.util.Optional;
 
 @Service
 public class DemandeCongeService {
-
     @Autowired
     TokenService tokenService;
 
@@ -58,6 +63,12 @@ public class DemandeCongeService {
 
     @Autowired
     private UserRoleService userRoleService;
+
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private EmployeService employeService;
 
     private static final String[] NOMS_MOIS = {
         "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
@@ -82,62 +93,37 @@ public class DemandeCongeService {
         User managerUser = userService.getById(userId)
             .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-        if (!userRoleService.hasRole(managerUser.getId(), "Manager")) {
+        List<UserRole> userRoles = userRoleService.getByUserId(userId);
+        if(userRoles == null || userRoles.isEmpty()) {
+            throw new RuntimeException("Aucun rôle trouvé pour cet utilisateur");
+        } 
+
+        boolean isManager = userRoles.stream()
+            .anyMatch(userRole -> "Manager".equals(userRole.getTypeUser().getType())); 
+        
+        if(!isManager) {
             throw new RuntimeException("Accès réservé aux managers");
         }
 
+        System.out.println("tafiditra ato ah ee++++++++++++++++++++++++++++++++++++");
+        System.out.println("Manager User ID: " + managerUser.getId());
+        System.out.println("Manager Emp ID: " + managerUser.getEmploye().getId());
+
         Manager manager = managerService.getManagerByEmploye(managerUser.getEmploye().getId());
+        System.out.println("id Manager: " + manager.getId());
+        List<DemandeConge> les_demandes = repository.findByManagerId(manager.getId());
+        System.out.println("demande siez : " + les_demandes.size());
+        for (DemandeConge demandeConge : les_demandes) {
+            System.out.println("dem : " + demandeConge.getCommentaireManager());
+        }
+        
         return repository.findByManagerId(manager.getId());
     }
 
-    // public List<DemandeConge> getDemandeCongesParManager(String token){
-    //     // 1. Vérifier que le token n'est pas null ou vide
-    //     if (token == null || token.trim().isEmpty()) {
-    //         throw new IllegalArgumentException("Token manquant");
-    //     } 
-
-    //     // 2. Récupérer et valider le token
-    //     Token gottenToken = tokenService.getTokenByToken(token);
-    //     System.out.println("hitany ve le token ? : " + gottenToken.getTokenGenere());
-    //     if (gottenToken == null) {
-    //         throw new RuntimeException("Token invalide ou introuvable");
-    //     }
-        
-    //     // 3. Vérifier que le token est actif
-    //     if (gottenToken.getIsActive() != null && gottenToken.getIsActive() == 0) {
-    //         throw new RuntimeException("Token désactivé");
-    //     }
-        
-    //     // 4. Vérifier l'expiration du token
-    //     if (gottenToken.getExpiresAt() != null && 
-    //         LocalDateTime.now().isAfter(gottenToken.getExpiresAt())) {
-    //         throw new RuntimeException("Token expiré");
-    //     } 
-
-    //     // 5. Récupérer l'utilisateur
-    //     User managerActuel = gottenToken.getUser();
-    //     System.out.println("iza no tomplé token ary e, le user : " + managerActuel.getEmploye().getNom());
-    //     if (managerActuel == null) {
-    //         throw new RuntimeException("Utilisateur non trouvé pour ce token");
-    //     }
-        
-    //     // 6. Vérifier que c'est bien un manager (optionnel mais recommandé)
-    //     if (managerActuel.getTypeUser() == null || 
-    //         !"Manager".equals(managerActuel.getTypeUser().getType())) {
-    //         throw new RuntimeException("Accès réservé aux managers");
-    //     }
-    //     System.out.println("tena manager ve izy e ? " + managerActuel.getTypeUser());
-        
-    //     // 7. Vérifier que l'utilisateur a un employé associé
-    //     if (managerActuel.getEmploye() == null) {
-    //         throw new RuntimeException("Aucun employé associé à cet utilisateur");
-    //     }
-        
-    //     // 8. Récupérer le manager
-    //     Manager manager = managerService.getManagerByEmploye(managerActuel.getEmploye().getId());
-
-    //     return repository.findByManagerId(manager.getId()); 
-    // }
+    public List<DemandeConge> findTodayDemandeCongeActif() {
+        LocalDate today = LocalDate.now();
+        return repository.findTodayDemandeCongeActif(today, 1);
+    }
 
     // Filtrage avec pagination - Version CORRIGÉE
     public Page<DemandeConge> filtrerDemandes(
@@ -198,29 +184,37 @@ public class DemandeCongeService {
         }
     }
 
+    @Transactional
     // validation côté manager
-    public DemandeConge validerDemande(String idDemande) {
+    public DemandeConge validerDemande(DemandeConge demandeConge, Claims claims) throws Exception {
         try {
-            // Vérifier si la demande existe
-            Optional<DemandeConge> opt = findById(idDemande);
-
-            if (opt.isEmpty()) {
-                throw new RuntimeException("Demande de conge introuvable pour l'id : " + idDemande);
+            String userId = claims.getSubject();
+            if (demandeConge.getCommentaireManager().isEmpty()) {
+                throw new Exception("Veuillez assigner un motif pour la validation de cette demande");
             }
-
-            DemandeConge demandeConge = opt.get();
-            demandeConge.setDecisionManager(1); // statut validé
+            // demandeConge.setDecisionManager(1); // statut validé
+            demandeConge.setStatut(1);
             demandeConge.setDateValidation(LocalDate.now());
+            DemandeConge demandeCongeUpdated = update(demandeConge.getId(), demandeConge);
 
-            // Mise à jour
-            return update(idDemande, demandeConge);
 
+            Notification notifications = new Notification();
+            notifications.setMessage("Demande de congé de " + demandeConge.getNbJours() + " jours du " + demandeConge.getDateDebut() + " au " + demandeConge.getDateFin() + " à valider");
+            notifications.setReferenceType("DemandeConge");
+            notifications.setReferenceId(demandeConge.getId());
+            notifications.setIdUtilisateurExpediteur(userId);
+            notifications.setLien("/employees/" + demandeConge.getEmploye().getId() + "/conges");
+
+            List<UserRole> les_user_role = userRoleService.getByTypeName("Admin_RH");
+            for(UserRole ur : les_user_role){
+                notifications.setIdUtilisateurDestinataire(ur.getUser().getId());
+                notificationService.createNotification(notifications);
+            }
+            
+            return demandeCongeUpdated;
         } catch (RuntimeException e) {
-            // Erreurs métier (ID inexistant)
             throw e;
-
         } catch (Exception e) {
-            // Erreurs techniques (database, null pointer, etc.)
             throw new RuntimeException("Erreur lors de la validation de la demande : " + e.getMessage(), e);
         }
     }
@@ -276,11 +270,23 @@ public class DemandeCongeService {
             throw new RuntimeException("Erreur lors de la validation de la demande : " + e.getMessage(), e);
         }
     }
- 
-    public DemandeConge enregistrer(DemandeConge demandeConge, String idEmploye) throws Exception{
+    
+    @Transactional
+    public DemandeConge enregistrer(DemandeConge demandeConge, Claims claims) throws Exception{
+        String idEmploye = claims.get("idEmploye", String.class);
+        String userId = claims.getSubject(); 
+        demandeConge.setDecisionManager(0);
+        demandeConge.setStatut(0); 
         if(!repository.existeChevauchementConge(idEmploye, demandeConge.getDateDebut(),
                                                 demandeConge.getDateFin())
         ){
+            Notification notifications = new Notification();
+            notifications.setMessage("Nouvelle demande de congé de " + demandeConge.getNbJours() + " jours du " + demandeConge.getDateDebut() + " au " + demandeConge.getDateFin());
+            notifications.setReferenceType("DemandeConge");
+            notifications.setReferenceId(demandeConge.getId());
+            notifications.setIdUtilisateurExpediteur(userId);
+            
+
             InfosProfessionnelles infosPro = infosProfessionnellesService.getDerniereInfoProfessionnelleByEmployeId
             (idEmploye).get();
             if(infosPro.getManager() == null){
@@ -288,17 +294,23 @@ public class DemandeCongeService {
             } else {
                 demandeConge.setManager(infosPro.getManager());
             }
-            Employe employe = new Employe();
-            employe.setId(idEmploye);
-            demandeConge.setEmploye(employe);
-            return repository.save(demandeConge);
+            User userManager = userService.findByEmployeId(infosPro.getManager().getEmploye().getId()).get();
+            notifications.setIdUtilisateurDestinataire(userManager.getId());
+            Employe employeToAssign = new Employe();
+            employeToAssign.setId(demandeConge.getEmploye().getId());
+            demandeConge.setEmploye(employeToAssign);
+            DemandeConge demandeCongeInserted = repository.save(demandeConge);
+            notifications.setReferenceId(demandeCongeInserted.getId());
+            notifications.setLien("/conge/validation");
+            notificationService.createNotification(notifications);
+            return demandeCongeInserted;
         } else{
             throw new Exception("erreur : Cette période : " + demandeConge.getDateDebut() + " et " + demandeConge.getDateFin() +
              " chevauchent avec votre période de congé déja existante");
         } 
     } 
 
-    public DemandeConge annulerDemande(String id, DemandeConge demandeEnvoye) {
+    public DemandeConge annulerDemande(String id, DemandeConge demandeEnvoye) throws Exception{
         DemandeConge demande = repository.findById(id)
             .orElseThrow(() -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND,
@@ -322,18 +334,19 @@ public class DemandeCongeService {
             );
         }
 
-        // ✅ On modifie SEULEMENT si la règle est respectée
-        demande.setDecisionManager(3); // annulé par le demandeur
+        // demande.setDecisionManager(3); // annulé par le demandeur
+        demande.setStatut(3);
+        if(demandeEnvoye.getCommentaireAnnulation() == null){
+            throw new Exception("Le motif d'annulation ne doit pas être null");
+        }
         demande.setCommentaireAnnulation(demandeEnvoye.getCommentaireAnnulation());
-
         return repository.save(demande);
     }
-
 
     public Optional<List<DemandeConge>> getDemandesParEmploye(String idEmploye){
         if(repository.findByEmployeId(idEmploye).isPresent()){
             return repository.findByEmployeId(idEmploye);
-        } else{
+        } else {
             return null;
         }
     }

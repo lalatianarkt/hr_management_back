@@ -17,7 +17,6 @@ public class MouvementSoldePaie {
 
     @Column(name = "id_mouvement_solde")
     private int idMouvementSolde;
-
     @Column(name = "id_employe")
     private String idEmploye;
 

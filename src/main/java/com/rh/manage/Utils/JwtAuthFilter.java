@@ -34,6 +34,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         FilterChain filterChain
     ) throws ServletException, IOException {
 
+        String path = request.getRequestURI();
+        
+        // Ignorer les endpoints publics
+        if (isPublicEndpoint(path)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -60,44 +68,46 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         } catch (ExpiredJwtException e) {
             e.printStackTrace();
-            // ✅ SOLUTION: Utiliser getOutputStream() au lieu de getWriter()
-            response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
-            response.setHeader("Access-Control-Allow-Credentials", "true");
-            response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-            response.setHeader("Access-Control-Allow-Headers", "*");
-            
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            
-            String jsonResponse = "{\"status\": 401, \"message\": \"Token expiré\", \"error\": \"EXPIRED_TOKEN\"}";
-            response.getOutputStream().write(jsonResponse.getBytes());
-            response.getOutputStream().flush();
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, 
+                "Token expiré", "EXPIRED_TOKEN");
             
         } catch (SignatureException | MalformedJwtException e) {
             e.printStackTrace();
-            // ✅ Pareil ici
-            response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
-            response.setHeader("Access-Control-Allow-Credentials", "true");
-            
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            
-            String jsonResponse = "{\"status\": 401, \"message\": \"Token invalide\", \"error\": \"INVALID_TOKEN\"}";
-            response.getOutputStream().write(jsonResponse.getBytes());
-            response.getOutputStream().flush();
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, 
+                "Token invalide", "INVALID_TOKEN");
             
         } catch (Exception e) {
             e.printStackTrace();
-            // ✅ Et ici
-            response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
-            response.setHeader("Access-Control-Allow-Credentials", "true");
-            
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            
-            String jsonResponse = "{\"status\": 401, \"message\": \"Erreur d'authentification\", \"error\": \"AUTH_ERROR\"}";
-            response.getOutputStream().write(jsonResponse.getBytes());
-            response.getOutputStream().flush();
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, 
+                "Erreur d'authentification", "AUTH_ERROR");
         }
     }
-}
+    
+    private boolean isPublicEndpoint(String path) {
+        // Liste des endpoints publics
+        return path.startsWith("/api/auth/") ||
+               path.equals("/api/users/auth") ||
+               path.equals("/api/users/register") ||
+               path.equals("/api/users/all") ||
+               path.startsWith("/api/public/");
+    }
+    
+    private void sendErrorResponse(HttpServletResponse response, int status, 
+                                   String message, String error) throws IOException {
+        response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+        response.setHeader("Access-Control-Allow-Credentials", "true");
+        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers", "*");
+        
+        response.setStatus(status);
+        response.setContentType("application/json");
+        
+        String jsonResponse = String.format(
+            "{\"status\": %d, \"message\": \"%s\", \"error\": \"%s\"}", 
+            status, message, error
+        );
+        response.getOutputStream().write(jsonResponse.getBytes());
+        response.getOutputStream().flush();
+    }
+} 
+

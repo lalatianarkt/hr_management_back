@@ -601,36 +601,35 @@ SELECT
     e.id as id_employe
 FROM manager m
 JOIN employe e ON m.id_employe = e.id
-JOIN departement d ON m.id_departement = d.id; 
+JOIN departement d ON m.id_departement = d.id
+WHERE m.statut = 0;
 
-create or replace view vue_demande_conge as 
-SELECT 
+-- create or replace view vue_demande_conge as 
+CREATE OR REPLACE VIEW vue_demande_conge AS 
+SELECT DISTINCT ON (dc.id)
     dc.date_debut,
     dc.date_fin,
     dc.nb_jours,
-
-    CASE dc.decision_manager
+    dc.statut,
+    CASE dc.statut
         WHEN 0 THEN 'en attente'
         WHEN 1 THEN 'validé par le manager'
         WHEN 2 THEN 'refusé par le manager'
         WHEN 3 THEN 'annulé par le demandeur'
         WHEN 4 THEN 'annulé par le RH'
         WHEN 5 THEN 'acquis'
-        WHEN 6 THEN 'supprimé'
+        WHEN 6 THEN 'validé par le RH'
+        WHEN 7 THEN 'refusé par le RH'
         ELSE 'inconnu'
     END AS decision_manager_libelle,
-
     dc.date_demande,
     dc.date_validation,
     dc.commentaire_manager,
     dc.commentaire,
     dc.commentaire_annulation,
-
-    
     emp.nom || ' ' || emp.prenom AS nom_complet_employe,
     emp.nom AS nom_employe,
     emp.prenom AS prenom_employe,
-
     m.nom AS nom_manager,
     m.prenom AS prenom_manager,
     m.nom_complet AS nom_complet_manager,
@@ -640,11 +639,12 @@ SELECT
     vi.matricule,
     m.id as id_manager,
     dc.id
-
 FROM demande_conge dc
 JOIN employe emp ON dc.id_employe = emp.id
 JOIN v_employe_infos_pro vi ON dc.id_employe = vi.employe_id
-JOIN vue_info_manager m ON vi.info_pro_id_departement = m.id_departement;
+JOIN vue_info_manager m ON dc.id_manager = m.id
+ORDER BY dc.id, vi.info_pro_date_debut_assignation DESC;
+
 
 create or replace view poste_niveau as 
 select 

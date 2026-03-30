@@ -1,155 +1,120 @@
 package com.rh.manage.Service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.rh.manage.Model.Notification;
 import com.rh.manage.Repository.NotificationRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@Transactional
 public class NotificationService {
     
     @Autowired
     private NotificationRepository notificationRepository;
     
-    // === Opérations CRUD de base ===
-    
-    public Notification creerNotification(Notification notification) {
-        if (notification.getSentDate() == null) {
-            notification.setSentDate(LocalDate.now());
-        }
-        if (notification.getStatus() == null) {
-            notification.setStatus(0); // 0 = non lu par défaut
-        }
+    // Créer une notification
+    public Notification createNotification(String message, String expediteur, String destinataire, 
+                                          String lien, String referenceType, String referenceId) {
+        Notification notification = new Notification(message, expediteur, destinataire, lien, referenceType, referenceId);
         return notificationRepository.save(notification);
     }
     
-    public Optional<Notification> getNotificationParId(Integer id) {
-        return notificationRepository.findById(id);
-    }
-    
-    public List<Notification> getAllNotifications() {
-        return notificationRepository.findAll();
-    }
-    
-    public Notification modifierNotification(Integer id, Notification notificationDetails) {
-        Notification notification = notificationRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Notification non trouvée avec l'id: " + id));
-        
-        // Mise à jour des champs
-        notification.setRecipientEmail(notificationDetails.getRecipientEmail());
-        notification.setMessage(notificationDetails.getMessage());
-        notification.setManagerId(notificationDetails.getManagerId());
-        notification.setConcernedUserId(notificationDetails.getConcernedUserId());
-        notification.setSenderUserId(notificationDetails.getSenderUserId());
-        notification.setStatus(notificationDetails.getStatus());
-        
+    // Créer une notification avec objet Notification
+    public Notification createNotification(Notification notification) {
+        notification.setCreatedAt(LocalDateTime.now());
+        notification.setModifiedAt(LocalDateTime.now());
+        notification.setEstLu(false);
         return notificationRepository.save(notification);
     }
     
-    public void supprimerNotification(Integer id) {
-        notificationRepository.deleteById(id);
-    }
-    
-    // === Méthodes métier ===
-    
-    public List<Notification> getNotificationsParUtilisateur(String idUtilisateur) {
-        return notificationRepository.findByConcernedUserId(idUtilisateur);
-    }
-    
-    public List<Notification> getNotificationsNonLues(String idUtilisateur) {
-        return notificationRepository.findByConcernedUserIdAndStatus(idUtilisateur, 0);
-    }
-    
-    public long compterNotificationsNonLues(String idUtilisateur) {
-        return notificationRepository.countUnreadNotifications(idUtilisateur);
-    }
-    
-    public Notification marquerCommeLue(Integer id) {
-        Notification notification = notificationRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Notification non trouvée"));
-        notification.setStatus(1); // 1 = lu
-        return notificationRepository.save(notification);
-    }
-    
-    public void marquerToutesCommeLues(String idUtilisateur) {
-        List<Notification> notificationsNonLues = notificationRepository
-            .findByConcernedUserIdAndStatus(idUtilisateur, 0);
-        notificationsNonLues.forEach(n -> n.setStatus(1));
-        notificationRepository.saveAll(notificationsNonLues);
-    }
-    
-    public List<Notification> getNotificationsParPeriode(LocalDate debut, LocalDate fin) {
-        return notificationRepository.findBySentDateBetween(debut, fin);
-    }
-    
-    public List<Notification> getNotificationsParManager(String idManager) {
-        return notificationRepository.findByManagerId(idManager);
-    }
-    
-    public List<Notification> getDernieresNotifications(String idUtilisateur, int limite) {
-        return notificationRepository.findTop10ByConcernedUserIdOrderBySentDateDescCreatedAtDesc(idUtilisateur)
-                .stream().limit(limite).toList();
-    }
-    
-    public List<Notification> rechercherNotifications(String motCle) {
-        return notificationRepository.rechercherParMotCle(motCle);
-    }
-    
-    public void nettoyerAnciennesNotifications(LocalDate dateLimite) {
-        notificationRepository.deleteOldNotifications(dateLimite);
-    }
-    
-    // === Méthodes utilitaires pour envoi rapide ===
-    
-    public Notification envoyerNotificationSimple(String email, String message, 
-                                                String managerId, String concernedUserId, 
-                                                String senderUserId) {
-        Notification notification = new Notification();
-        notification.setRecipientEmail(email);
-        notification.setMessage(message);
-        notification.setManagerId(managerId);
-        notification.setConcernedUserId(concernedUserId);
-        notification.setSenderUserId(senderUserId);
-        notification.setSentDate(LocalDate.now());
-        notification.setStatus(0);
-        
-        return notificationRepository.save(notification);
-    }
-    
-    public List<Notification> envoyerNotificationGroupee(List<String> emails, String message,
-                                                       String managerId, String concernedUserId,
-                                                       String senderUserId) {
-        List<Notification> notifications = emails.stream().map(email -> {
-            Notification notif = new Notification();
-            notif.setRecipientEmail(email);
-            notif.setMessage(message);
-            notif.setManagerId(managerId);
-            notif.setConcernedUserId(concernedUserId);
-            notif.setSenderUserId(senderUserId);
-            notif.setSentDate(LocalDate.now());
-            notif.setStatus(0);
-            return notif;
-        }).toList();
-        
+    // Créer des notifications en masse
+    public List<Notification> createNotifications(List<Notification> notifications) {
+        notifications.forEach(notif -> {
+            notif.setCreatedAt(LocalDateTime.now());
+            notif.setModifiedAt(LocalDateTime.now());
+            notif.setEstLu(false);
+        });
         return notificationRepository.saveAll(notifications);
     }
     
-    // === Statistiques ===
-    
-    public long getNombreTotalNotifications() {
-        return notificationRepository.count();
+    // Récupérer toutes les notifications d'un utilisateur
+    public List<Notification> getNotificationsByUser(String userId) {
+        return notificationRepository.findByIdUtilisateurDestinataireOrderByCreatedAtDesc(userId);
     }
     
-    public long getNombreNotificationsParUtilisateur(String idUtilisateur) {
-        return notificationRepository.findByConcernedUserId(idUtilisateur).size();
+    // Récupérer les notifications d'un utilisateur avec pagination
+    public Page<Notification> getNotificationsByUser(String userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return notificationRepository.findByIdUtilisateurDestinataireOrderByCreatedAtDesc(userId, pageable);
     }
     
-    public long getNombreNotificationsParStatut(Integer statut) {
-        return notificationRepository.findByStatus(statut).size();
+    // Récupérer les notifications non lues d'un utilisateur
+    public List<Notification> getNonLuesByUser(String userId) {
+        return notificationRepository.findByIdUtilisateurDestinataireAndEstLuFalseOrderByCreatedAtDesc(userId);
     }
     
+    // Compter les notifications non lues
+    public long countNonLues(String userId) {
+        return notificationRepository.countNonLuesByUtilisateur(userId);
+    }
+    
+    // Marquer une notification comme lue
+    public void markAsRead(Long id) {
+        notificationRepository.marquerCommeLue(id);
+    }
+    
+    // Marquer toutes les notifications d'un utilisateur comme lues
+    public void markAllAsRead(String userId) {
+        notificationRepository.marquerToutCommeLu(userId);
+    }
+    
+    // Récupérer une notification par son ID
+    public Notification getNotificationById(Long id) {
+        return notificationRepository.findById(id).orElse(null);
+    }
+    
+    // Supprimer une notification
+    public void deleteNotification(Long id) {
+        notificationRepository.deleteById(id);
+    }
+    
+    // Supprimer toutes les notifications d'un utilisateur
+    public void deleteAllNotificationsByUser(String userId) {
+        notificationRepository.deleteByIdUtilisateurDestinataire(userId);
+    }
+    
+    // Nettoyer les anciennes notifications
+    public void cleanOldNotifications(int days) {
+        LocalDateTime cutoffDate = LocalDateTime.now().minusDays(days);
+        notificationRepository.deleteByCreatedAtBefore(cutoffDate);
+    }
+    
+    // Rechercher des notifications
+    public Page<Notification> searchNotifications(String userId, Boolean estLu, String referenceType, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return notificationRepository.rechercherNotifications(userId, estLu, referenceType, pageable);
+    }
+    
+    // Mettre à jour une notification
+    public Notification updateNotification(Long id, Notification notificationDetails) {
+        Notification notification = notificationRepository.findById(id).orElse(null);
+        if (notification != null) {
+            notification.setMessage(notificationDetails.getMessage());
+            notification.setLien(notificationDetails.getLien());
+            notification.setReferenceType(notificationDetails.getReferenceType());
+            notification.setReferenceId(notificationDetails.getReferenceId());
+            notification.setModifiedAt(LocalDateTime.now());
+            return notificationRepository.save(notification);
+        }
+        return null;
+    }
 }

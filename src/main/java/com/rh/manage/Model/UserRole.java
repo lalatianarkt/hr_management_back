@@ -3,20 +3,23 @@ package com.rh.manage.Model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.io.Serializable;
 
 @Entity
 @Table(name = "user_role")
-@IdClass(UserRoleId.class)
 public class UserRole {
 
-    @Id
+    @EmbeddedId
+    private UserRoleId id;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idUser", referencedColumnName = "id")
+    @MapsId("userId")  // Important: spécifie que ce champ correspond à la propriété userId dans UserRoleId
+    @JoinColumn(name = "id_user", referencedColumnName = "id")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "userRoles"})
     private User user;
 
-    @Id
     @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("typeUserId")  // Important: spécifie que ce champ correspond à la propriété typeUserId dans UserRoleId
     @JoinColumn(name = "id_type", referencedColumnName = "id")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "userRoles"})
     private TypeUser typeUser;
@@ -35,6 +38,7 @@ public class UserRole {
     public UserRole(User user, TypeUser typeUser) {
         this.user = user;
         this.typeUser = typeUser;
+        this.id = new UserRoleId(user.getId(), typeUser.getId());
     }
 
     @PrePersist
@@ -46,7 +50,7 @@ public class UserRole {
             this.modifiedAt = this.createdAt;
         }
         if (this.statut == null) {
-            this.statut = 0; // 0 = actif, 1 = inactif
+            this.statut = 0;
         }
     }
 
@@ -56,12 +60,23 @@ public class UserRole {
     }
 
     // Getters et Setters
+    public UserRoleId getId() { 
+        return id; 
+    }
+    
+    public void setId(UserRoleId id) { 
+        this.id = id; 
+    }
+
     public User getUser() { 
         return user; 
     }
     
     public void setUser(User user) { 
         this.user = user; 
+        if (this.id == null && user != null && typeUser != null) {
+            this.id = new UserRoleId(user.getId(), typeUser.getId());
+        }
     }
 
     public TypeUser getTypeUser() { 
@@ -70,6 +85,9 @@ public class UserRole {
     
     public void setTypeUser(TypeUser typeUser) { 
         this.typeUser = typeUser; 
+        if (this.id == null && user != null && typeUser != null) {
+            this.id = new UserRoleId(user.getId(), typeUser.getId());
+        }
     }
 
     public LocalDateTime getCreatedAt() { 

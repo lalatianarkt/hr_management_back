@@ -67,11 +67,11 @@ public class EmployeController {
     }
 
     @PostMapping("/{idEmploye}/archive")
-    public ResponseEntity<?> archive(@PathVariable String idEmploye, @RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<?> archive(@PathVariable String idEmploye) {
         try {
-            tokenService.validateToken(authHeader);
             return ResponseEntity.ok(employeService.archiver(idEmploye));
         } catch(TokenException e){
+            e.printStackTrace();
             return ResponseEntity.status(401).body(e.getMessage());
         }  catch (Exception e) {
             e.printStackTrace();

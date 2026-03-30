@@ -129,7 +129,7 @@ public class MouvementController {
 
             Mouvement savedMouvement = mouvementService.creerDemandeMouvement(mouvement);
             automatisationService.sendEmailNotificationMouvement(savedMouvement);
-
+            
             return ResponseEntity
                     .status(HttpStatus.CREATED)
                     .body(Map.of(

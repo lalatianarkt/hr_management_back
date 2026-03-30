@@ -163,9 +163,9 @@ public class EmployeService {
     public Employe archiver(String idEmploye){
         Employe employe = employeRepository.findById(idEmploye).get();
         employe.setStatut(1);
-        InfosProfessionnelles infoProActuel = infosProfessionnellesService.getDerniereInfoProfessionnelleByEmployeId(idEmploye).get();
-        infoProActuel.setStatut(1);
-        infosProfessionnellesRepository.save(infoProActuel);
+        // InfosProfessionnelles infoProActuel = infosProfessionnellesService.getDerniereInfoProfessionnelleByEmployeId(idEmploye).get();
+        // infoProActuel.setStatut(1);
+        // infosProfessionnellesRepository.save(infoProActuel);
         Employe employeUpdated = employeRepository.save(employe);
         return employeUpdated;
     }
