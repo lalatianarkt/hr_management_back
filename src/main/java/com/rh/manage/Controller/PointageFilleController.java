@@ -6,13 +6,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.rh.manage.Model.PointageFille;
 import com.rh.manage.Service.PointageFilleService;
+
+import com.rh.manage.Model.PointageFille;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/pointages-filles")
 public class PointageFilleController {
@@ -40,9 +42,13 @@ public class PointageFilleController {
     
     @PutMapping("/{id}")
     public ResponseEntity<PointageFille> updatePointageFille(
-            @PathVariable String id, 
-            @RequestBody PointageFille pointageFilleDetails) {
-        PointageFille updated = pointageFilleService.updatePointageFille(id, pointageFilleDetails);
+            @PathVariable String id,
+            @RequestBody UpdatePointageFilleRequest request) {
+        PointageFille updated = pointageFilleService.updatePointageFille(
+                id,
+                request.toPointageFille(),
+                request.getCommentaire()
+        );
         return ResponseEntity.ok(updated);
     }
     
@@ -83,6 +89,15 @@ public class PointageFilleController {
         List<PointageFille> pointagesFilles = pointageFilleService.getPointagesFillesByPeriod(start, end);
         return ResponseEntity.ok(pointagesFilles);
     }
+
+    @GetMapping("/employe/{employeId}/date/{date}")
+    public ResponseEntity<List<PointageFille>> getPointagesFillesByEmployeAndDate(
+            @PathVariable String employeId,
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) java.time.LocalDate date) {
+        List<PointageFille> pointagesFilles =
+                pointageFilleService.getPointagesFillesByEmployeAndDate(employeId, date);
+        return ResponseEntity.ok(pointagesFilles);
+    }
     
     // @DeleteMapping("/pointage/{pointageId}/all")
     // public ResponseEntity<Void> deleteAllByPointage(@PathVariable String pointageId) {
@@ -121,5 +136,62 @@ public class PointageFilleController {
                 "dernierPointage", last != null ? last.getDateHeurePointage() : null,
                 "hasPointagesFilles", count > 0
         ));
+    }
+
+    public static class UpdatePointageFilleRequest {
+        private String id;
+        private LocalDateTime dateHeurePointage;
+        private String typeAction;
+        private String source;
+        private String commentaire;
+
+        public PointageFille toPointageFille() {
+            PointageFille pf = new PointageFille();
+            pf.setId(this.id);
+            pf.setDateHeurePointage(this.dateHeurePointage);
+            pf.setTypeAction(this.typeAction);
+            pf.setSource(this.source);
+            return pf;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public LocalDateTime getDateHeurePointage() {
+            return dateHeurePointage;
+        }
+
+        public void setDateHeurePointage(LocalDateTime dateHeurePointage) {
+            this.dateHeurePointage = dateHeurePointage;
+        }
+
+        public String getTypeAction() {
+            return typeAction;
+        }
+
+        public void setTypeAction(String typeAction) {
+            this.typeAction = typeAction;
+        }
+
+        public String getSource() {
+            return source;
+        }
+
+        public void setSource(String source) {
+            this.source = source;
+        }
+
+        public String getCommentaire() {
+            return commentaire;
+        }
+
+        public void setCommentaire(String commentaire) {
+            this.commentaire = commentaire;
+        }
     }
 }

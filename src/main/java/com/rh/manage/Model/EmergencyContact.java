@@ -36,6 +36,9 @@ public class EmergencyContact {
     @Column(name = "modified_at")
     private LocalDateTime modifiedAt;
 
+    @Column(name = "lien_parente")
+    private String lienParente;
+
     // 🔹 Constructeur par défaut
     public EmergencyContact() {
     }
@@ -86,6 +89,15 @@ public class EmergencyContact {
     public void setNom(String nom) {
         this.nom = nom;
     }
+
+    public String getLienParente() {
+        return lienParente;
+    }
+
+    public void setLienParente(String lienParente) {
+        this.lienParente = lienParente;
+    }
+
 
     @Override
     public String toString() {

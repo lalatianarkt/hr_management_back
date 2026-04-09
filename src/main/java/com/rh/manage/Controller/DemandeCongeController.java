@@ -283,10 +283,13 @@ public class DemandeCongeController {
     public ResponseEntity<?> DemandeValidationRH(
         @PathVariable String id,
         @RequestParam(required = true) int idMouvement,
-        @RequestBody DemandeConge demande){
-        try {
+        @RequestBody DemandeConge demande,
+        @RequestHeader("Authorization") String authHeader){
+        try { 
+            String token = authHeader.substring(7);
+            Claims claims = jwtService.validateToken(token);
             demande.setId(id);
-            DemandeConge demandeConge = service.validateRHWithInsertionMouvement(demande, idMouvement);
+            DemandeConge demandeConge = service.validerDemandeRH(demande, claims);
             // DemandeConge demandeConge = service.validerDemandeRH(demande);
             return ResponseEntity.ok(demandeConge); // 200 OK 
 
@@ -298,6 +301,27 @@ public class DemandeCongeController {
             // Erreur interne (ex: problème de base de données)
             return ResponseEntity.status(500)
                     .body("Erreur interne lors de la validation de la demande : " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/refuser-rh/{id}")
+    public ResponseEntity<?> refuserDemandeCongeRH(
+        @PathVariable String id,
+        @RequestBody DemandeConge demande,
+        @RequestHeader("Authorization") String authHeader) {
+        try {
+            String token = authHeader.substring(7);
+            Claims claims = jwtService.validateToken(token);
+            demande.setId(id);
+            DemandeConge updated = service.refuserDemandeRH(demande, claims);
+            return ResponseEntity.ok(updated);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body("Erreur interne lors du refus RH de la demande : " + e.getMessage());
         }
     }
 

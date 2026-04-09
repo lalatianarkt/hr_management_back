@@ -63,6 +63,7 @@ public class EmergencyContactService {
             emergency_to_update.setContact(contact.getContact());
             emergency_to_update.setEmail(contact.getEmail());
             emergency_to_update.setNom(contact.getNom());
+            emergency_to_update.setLienParente(contact.getLienParente());
             
             // Sauvegarder et retourner
             EmergencyContact urgence = update(emergency_to_update);

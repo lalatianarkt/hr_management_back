@@ -2,18 +2,24 @@ package com.rh.manage.Controller;
 
 import com.rh.manage.Model.*;
 import com.rh.manage.Service.MouvementService;
+
+import io.jsonwebtoken.Claims;
+
 import com.rh.manage.Service.AutomatisationService;
 import com.rh.manage.Service.EmployeService;
 import com.rh.manage.Service.InfosProfessionnellesService;
+import com.rh.manage.Service.JwtService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 
 
 @RestController
@@ -23,6 +29,9 @@ public class MouvementController {
 
     @Autowired 
     AutomatisationService automatisationService;
+
+    @Autowired
+    JwtService jwtService;
 
     private final MouvementService mouvementService;
     private final EmployeService employeService;
@@ -77,7 +86,7 @@ public class MouvementController {
             }
             
             Mouvement mvt = mouvementService.creerDemandeMouvement(mouvement);
-            automatisationService.sendEmailNotificationMouvement(mvt);
+            // automatisationService.sendEmailNotificationMouvement(mvt);
             
             System.out.println("✅ Mouvement créé avec succès: " + mvt.getId());
             return ResponseEntity.ok(mvt);
@@ -128,7 +137,7 @@ public class MouvementController {
         try {
 
             Mouvement savedMouvement = mouvementService.creerDemandeMouvement(mouvement);
-            automatisationService.sendEmailNotificationMouvement(savedMouvement);
+            // automatisationService.sendEmailNotificationMouvement(savedMouvement);
             
             return ResponseEntity
                     .status(HttpStatus.CREATED)
@@ -168,15 +177,13 @@ public class MouvementController {
     @PutMapping("/{id}/validation")
     public ResponseEntity<Mouvement> validerMouvement(
             @PathVariable String id, 
-            @RequestBody Mouvement mouvement) { // Ajout de @RequestBody
+            @RequestBody Mouvement mouvement,
+            @RequestHeader("Authorization") String authHeader) { // Ajout de @RequestBody
         try {
+            String token = authHeader.substring(7);
+            Claims claims = jwtService.validateToken(token);
             Mouvement mouvementValide;
-            
-            if(mouvement.getStatut() == 2) {
-                mouvementValide = mouvementService.validerMouvement(id, mouvement);
-            } else {
-                mouvementValide = mouvementService.rejeterMouvement(id, mouvement);
-            }
+            mouvementValide = mouvementService.validerMouvement(id, mouvement, claims);
             
             return ResponseEntity.ok(mouvementValide);
         } catch (RuntimeException e) {
@@ -186,40 +193,65 @@ public class MouvementController {
         }
     }
 
-    /**
-     * Rejeter un mouvement
-     */
-    // @PostMapping("/{id}/rejet")
-    // public ResponseEntity<Mouvement> rejeterMouvement(
-    //         @PathVariable String id,
-    //         @RequestBody RejetRequest rejetRequest) {
-    //     try {
-    //         Employe validateur = employeService.getById(rejetRequest.getIdValidateur())
-    //             .orElseThrow(() -> new RuntimeException("Validateur non trouvé"));
-
-    //         Mouvement mouvementRejete = mouvementService.rejeterMouvement(
-    //             id, validateur, rejetRequest.getMotifRejet());
-
-    //         return ResponseEntity.ok(mouvementRejete);
-
-    //     } catch (RuntimeException e) {
-    //         return ResponseEntity.badRequest().body(null);
-    //     } catch (Exception e) {
-    //         return ResponseEntity.internalServerError().build();
-    //     }
-    // }
+    @PutMapping("/{id}/refuser")
+    public ResponseEntity<Mouvement> refuserMouvement(
+            @PathVariable String id, 
+            @RequestBody Mouvement mouvement,
+            @RequestHeader("Authorization") String authHeader) { // Ajout de @RequestBody
+        try {
+            String token = authHeader.substring(7);
+            Claims claims = jwtService.validateToken(token);
+            Mouvement mouvementValide;
+            mouvementValide = mouvementService.rejeterMouvement(id, mouvement, claims);
+            return ResponseEntity.ok(mouvementValide);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(null);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 
     /**
      * Récupérer les mouvements en attente de validation
      */
-    @GetMapping("/en-attente")
-    public ResponseEntity<List<Mouvement>> getMouvementsEnAttente() {
+    @GetMapping("/manager")
+    public ResponseEntity<List<Mouvement>> getMouvementsParManager(@RequestHeader("Authorization") String authHeader) {
         try {
-            List<Mouvement> mouvements = mouvementService.findMouvementsEnAttente();
+            String token = authHeader.substring(7);
+            Claims claims = jwtService.validateToken(token);
+            List<Mouvement> mouvements = mouvementService.findByManager(claims);
             return ResponseEntity.ok(mouvements);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    @PutMapping("/manager/validate/{id}")
+    public ResponseEntity<?> valider(@PathVariable String id, @RequestBody Mouvement mouvement,
+                                        @RequestHeader("Authorization") String authHeader
+    ) {
+       try {
+          String token = authHeader.substring(7);
+          Claims claims = jwtService.validateToken(token);
+          Mouvement mouvementUpdated = mouvementService.validerMouvementByManager(id, mouvement, claims);
+          return ResponseEntity.ok(mouvementUpdated);
+       } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+       }
+    }
+
+    @PutMapping("/manager/refuse/{id}")
+    public ResponseEntity<?> refuser(@PathVariable String id, @RequestBody Mouvement mouvement,
+                                        @RequestHeader("Authorization") String authHeader
+    ) {
+       try {
+          String token = authHeader.substring(7);
+          Claims claims = jwtService.validateToken(token);
+          Mouvement mouvementUpdated = mouvementService.refuserMouvementByManager(id, mouvement, claims);
+          return ResponseEntity.ok(mouvementUpdated);
+       } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+       }
     }
 
     /**

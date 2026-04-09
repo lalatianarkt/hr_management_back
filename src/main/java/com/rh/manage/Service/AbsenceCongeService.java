@@ -80,32 +80,20 @@ public class AbsenceCongeService {
     
     @Transactional(readOnly = true)
     public StatistiquesAbsenceDTO getStatistiquesGlobales() {
-        Long totalAbsences = absenceCongeRepository.countTotalAbsences();
-        Long totalConges = absenceCongeRepository.countTotalConges();
-        Long totalEmployes = employeService.countTotalEmployes();
-        
-        Double tauxAbsence = totalEmployes > 0 ? 
-                (totalAbsences.doubleValue() / (totalEmployes * 100.0)) * 100 : 0.0;
-        Double tauxConge = totalEmployes > 0 ? 
-                (totalConges.doubleValue() / (totalEmployes * 100.0)) * 100 : 0.0;
+        LocalDate dateDebut = LocalDate.now().minusDays(100);
+        LocalDate dateFin = LocalDate.now();
+        return getStatistiquesGlobales(dateDebut, dateFin);
+    }
 
-        return new
-            StatistiquesAbsenceDTO(totalAbsences, totalConges,
-            tauxAbsence, tauxConge, "100 derniers jours", 
-            LocalDate.now().minusDays(100), 
-            LocalDate.now()
-        );
-
-        
-        // return StatistiquesAbsenceDTO.builder()
-        //         .totalAbsences(totalAbsences)
-        //         .totalConges(totalConges)
-        //         .tauxAbsence(tauxAbsence)
-        //         .tauxConge(tauxConge)
-        //         .periode("100 derniers jours")
-        //         .dateDebut(LocalDate.now().minusDays(100))
-        //         .dateFin(LocalDate.now())
-        //         .build();
+    @Transactional(readOnly = true)
+    public StatistiquesAbsenceDTO getStatistiquesGlobales(LocalDate dateDebut, LocalDate dateFin) {
+        if (dateDebut == null || dateFin == null) {
+            throw new IllegalArgumentException("dateDebut et dateFin sont obligatoires");
+        }
+        if (dateDebut.isAfter(dateFin)) {
+            throw new IllegalArgumentException("dateDebut doit Ãªtre avant dateFin");
+        }
+        return getStatistiquesParPeriode(dateDebut, dateFin);
     }
     
     @Transactional(readOnly = true)
@@ -137,6 +125,44 @@ public class AbsenceCongeService {
         //         .dateDebut(dateDebut)
         //         .dateFin(dateFin)
         //         .build();
+    }
+
+    @Transactional(readOnly = true)
+    public StatistiquesAbsenceDTO getStatistiquesParPeriodeEtDepartement(LocalDate dateDebut, LocalDate dateFin, String departementId) {
+        if (dateDebut == null || dateFin == null) {
+            throw new IllegalArgumentException("dateDebut et dateFin sont obligatoires");
+        }
+        if (dateDebut.isAfter(dateFin)) {
+            throw new IllegalArgumentException("dateDebut doit être avant dateFin");
+        }
+        if (departementId == null || departementId.trim().isEmpty()) {
+            throw new IllegalArgumentException("departementId est obligatoire");
+        }
+
+        List<AbsenceCongeView> result = absenceCongeRepository.findWithFilters(
+                null, departementId, null, dateDebut, dateFin);
+
+        long totalAbsences = result.stream()
+                .filter(a -> a.getTypeAbsence() == AbsenceCongeView.TypeAbsence.absence)
+                .count();
+        long totalConges = result.stream()
+                .filter(a -> a.getTypeAbsence() == AbsenceCongeView.TypeAbsence.conge)
+                .count();
+
+        long totalEmployes = employeService.countEmployesByDepartement(departementId);
+        long joursOuvrables = calculerJoursOuvrables(dateDebut, dateFin);
+
+        double tauxAbsence = totalEmployes > 0 && joursOuvrables > 0
+                ? (totalAbsences / (double) (totalEmployes * joursOuvrables)) * 100
+                : 0.0;
+        double tauxConge = totalEmployes > 0 && joursOuvrables > 0
+                ? (totalConges / (double) (totalEmployes * joursOuvrables)) * 100
+                : 0.0;
+
+        return new StatistiquesAbsenceDTO(
+                totalAbsences, totalConges, tauxAbsence, tauxConge,
+                dateDebut + " à " + dateFin, dateDebut, dateFin
+        );
     }
     
     @Transactional(readOnly = true)

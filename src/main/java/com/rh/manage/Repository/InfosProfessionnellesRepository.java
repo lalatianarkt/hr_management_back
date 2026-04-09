@@ -143,8 +143,11 @@ public interface InfosProfessionnellesRepository extends JpaRepository<InfosProf
        "LIMIT 1")
     InfosProfessionnelles findLastByEmployeId(@Param("employeId") String employeId);    
 
-    @Query("SELECT ip FROM InfosProfessionnelles ip WHERE ip.typeContrat.intitule = :intitule")
+    @Query("SELECT ip FROM InfosProfessionnelles ip WHERE ip.typeContrat.intitule = :intitule and ip.statut = 0")
     List<InfosProfessionnelles> findByTypeContratIntitule(@Param("intitule") String intitule);
+
+    @Query("SELECT ip FROM InfosProfessionnelles ip WHERE ip.statut = 0 AND ip.typeContrat.intitule NOT IN ('CDI','CDD')")
+    List<InfosProfessionnelles> findByTypeContratNotCdiCddAndStatutZero();
 
     List<InfosProfessionnelles> findByStatut(int statut);
 
@@ -162,6 +165,8 @@ public interface InfosProfessionnellesRepository extends JpaRepository<InfosProf
     boolean existsByMatricule(String matricule);
 
     Optional<List<InfosProfessionnelles>> findByDepartementIdAndStatut(String departementId, int statut);
+
+    boolean existsByDepartementIdAndEmployeIdAndStatut(String departementId, String employeId, int statut);
     
 }
 

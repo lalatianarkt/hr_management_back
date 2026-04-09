@@ -53,6 +53,15 @@ public interface PointageFilleRepository extends JpaRepository<PointageFille, St
             @Param("employeId") String employeId,
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end);
+
+    // Trouver les pointages filles d'un employÃ© par pÃ©riode (ordonnÃ©s)
+    @Query("SELECT pf FROM PointageFille pf JOIN pf.pointage p " +
+           "WHERE p.employe.id = :employeId AND pf.dateHeurePointage BETWEEN :start AND :end " +
+           "ORDER BY pf.dateHeurePointage ASC")
+    List<PointageFille> findByEmployeIdAndDateBetweenOrderByDateHeurePointageAsc(
+            @Param("employeId") String employeId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
     
     // Trouver les entrées non appariées avec des sorties
     @Query("SELECT pf FROM PointageFille pf WHERE pf.typeAction = 'IN' AND NOT EXISTS (" +

@@ -19,6 +19,11 @@ public interface MouvementRepository extends JpaRepository<Mouvement, String> {
      * Trouver les mouvements par statut
      */
     List<Mouvement> findByStatut(Integer statut);
+    
+    /**
+     * Trouver les mouvements par une liste de statuts
+     */
+    List<Mouvement> findByStatutIn(List<Integer> statuts);
 
     /**
      * Trouver les mouvements par employé demandeur
@@ -64,6 +69,12 @@ public interface MouvementRepository extends JpaRepository<Mouvement, String> {
      * Trouver le dernier mouvement d'un employé
      */
     Optional<Mouvement> findFirstByEmployeDemandeurOrderByDateDemandeDesc(Employe employe);
+
+    /**
+     * Récupérer tous les mouvements dont le statut n'est pas égal à 6
+     */
+    @Query("SELECT m FROM Mouvement m WHERE m.statut <> 6")
+    List<Mouvement> getMouvement();
 
     /**
      * Requête personnalisée : Mouvements en attente avec details

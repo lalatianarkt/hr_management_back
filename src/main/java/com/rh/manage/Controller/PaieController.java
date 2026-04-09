@@ -44,7 +44,7 @@ public class PaieController {
     @PostMapping("/generer-multiples")
     public ResponseEntity<?> genererPaiesMultiples(@RequestBody PaieGenerationRequest requestData) {
         try {
-            // Validation
+            // Validation 
             if (requestData.getLes_paies() == null || requestData.getLes_paies().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
                     "success", false,

@@ -2,6 +2,7 @@ package com.rh.manage.Controller;
 
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +20,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.rh.manage.Dto.AlerteDTO;
 import com.rh.manage.Dto.DashboardRHDTO;
 import com.rh.manage.Dto.KPIDTO;
+import com.rh.manage.Dto.TendanceMensuelleDTO;
 import com.rh.manage.Service.DashboardRHService;
+import com.rh.manage.Service.JwtService;
 import com.rh.manage.Service.TokenService;
 import com.rh.manage.Service.TokenService.TokenException;
+
+import io.jsonwebtoken.Claims;
 
 @RestController
 @RequestMapping("/api/dashboard")
@@ -32,6 +37,9 @@ public class DashboardRHController {
 
     @Autowired 
     private DashboardRHService dashboardRHService;
+
+    @Autowired
+    private JwtService jwtService;
 
     // @GetMapping
     // public ResponseEntity<?> getDashboard() {
@@ -79,6 +87,50 @@ public class DashboardRHController {
             System.out.println("error : " + e.getMessage());
             return ResponseEntity.internalServerError()
                 .body(creerDashboardErreur("Erreur lors de la génération du dashboard: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/manager")
+    public ResponseEntity<?> getDashboardManagerParPeriode0(
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateDebut,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFin,
+        @RequestHeader("Authorization") String authHeader){
+        try { 
+            String token = authHeader.substring(7);
+            Claims claims = jwtService.validateToken(token);
+            return ResponseEntity.ok(dashboardRHService.getDashboardManagerParPeriodeParManager(dateDebut, dateFin, claims));
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("error : " + e.getMessage());
+            return ResponseEntity.internalServerError()
+                .body(creerDashboardErreur("Erreur lors de la génération du dashboard: " + e.getMessage()));
+        }
+    }
+    
+
+    @GetMapping("/tendances")
+    public ResponseEntity<?> getTendancesParPeriode(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateDebut,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFin
+        ) {
+        try {
+            if (dateDebut == null || dateFin == null) {
+                return ResponseEntity.badRequest()
+                    .body(creerDashboardErreur("Les dates de dÃ©but et de fin sont obligatoires"));
+            }
+
+            if (dateDebut.isAfter(dateFin)) {
+                return ResponseEntity.badRequest()
+                    .body(creerDashboardErreur("La date de dÃ©but doit Ãªtre antÃ©rieure Ã  la date de fin"));
+            }
+
+            List<TendanceMensuelleDTO> tendances = dashboardRHService.getTendancesParPeriode(dateDebut, dateFin);
+            return ResponseEntity.ok(tendances);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("error : " + e.getMessage());
+            return ResponseEntity.internalServerError()
+                .body(creerDashboardErreur("Erreur lors du calcul des tendances: " + e.getMessage()));
         }
     }
 

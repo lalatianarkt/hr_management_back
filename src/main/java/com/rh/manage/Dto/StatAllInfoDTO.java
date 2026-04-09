@@ -6,17 +6,25 @@ public class StatAllInfoDTO {
     private int nb_contrat_cdi;
     private int nb_contrat_cdd;
     private int nb_employe;
+    private int nb_employe_inactif;
     private int nb_poste;
     private int nb_employes_en_conges;
     private int nb_competences_employes;
     private double nb_competences_added_dernier_mois; 
     private double nb_moyenne_competence_par_employe;
+    private int nb_contrat_autre;
 
     // private int nb_absences;
     
 
     public int getNb_manager() {
         return nb_manager;
+    }
+    public int getNb_contrat_autre() {
+        return nb_contrat_autre;
+    }
+    public void setNb_contrat_autre(int nb_contrat_autre) {
+        this.nb_contrat_autre = nb_contrat_autre;
     }
     public int getNb_contrat_cdi() {
         return nb_contrat_cdi;
@@ -75,5 +83,11 @@ public class StatAllInfoDTO {
     }
     public void setNb_poste(int nb_poste) {
         this.nb_poste = nb_poste;
+    }
+    public int getNb_employe_inactif() {
+        return nb_employe_inactif;
+    }
+    public void setNb_employe_inactif(int nb_employe_inactif) {
+        this.nb_employe_inactif = nb_employe_inactif;
     }
 }

@@ -1,9 +1,10 @@
 -- sexe test data
 BEGIN;
-INSERT INTO sexe (sexe, code) VALUES 
-('Masculin', 'M'),
-('Féminin', 'F'),
-('Non binaire', 'N'),
-('Autre', 'A'),
-('Non spécifié', 'X');
+INSERT INTO sexe (id, sexe, code) VALUES 
+(1, 'Masculin', 'M'),
+(2, 'Féminin', 'F'),
+(3, 'Non binaire', 'N'),
+(4, 'Autre', 'A'),
+(5, 'Non spécifié', 'X');
 COMMIT;
+

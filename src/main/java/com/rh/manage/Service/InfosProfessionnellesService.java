@@ -103,6 +103,10 @@ public class InfosProfessionnellesService {
         return infosProfessionnellesRepository.findCurrentByEmployeId(idEmploye);
     } 
 
+    public boolean existsInDepartement(String idDepartement, String idEmploye){
+        return infosProfessionnellesRepository.existsByDepartementIdAndEmployeIdAndStatut(idDepartement, idEmploye, 0);
+    }
+
     public InfosProfessionnelles findLastByEmployeId(String idEmploye){
         return infosProfessionnellesRepository.findLastByEmployeId(idEmploye);
     }
@@ -170,6 +174,10 @@ public class InfosProfessionnellesService {
 
     public List<InfosProfessionnelles> getAllInfosProParTypeContrat(String typeContrat){
         return infosProfessionnellesRepository.findByTypeContratIntitule(typeContrat);
+    }
+
+    public List<InfosProfessionnelles> getAllInfosProContratsAutresQueCdiCdd(){
+        return infosProfessionnellesRepository.findByTypeContratNotCdiCddAndStatutZero();
     }
     
     // Récupérer la dernière info professionnelle avec statut = 0 d'un employé

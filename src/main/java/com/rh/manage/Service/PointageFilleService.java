@@ -5,10 +5,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.rh.manage.Model.PointageFille;
+import com.rh.manage.Model.Pointage;
 import com.rh.manage.Repository.PointageFilleRepository;
 import com.rh.manage.Repository.PointageRepository;
+import com.rh.manage.Model.ReglementHoraireInterieur;
+import java.math.BigDecimal;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -22,6 +29,9 @@ public class PointageFilleService {
 
     @Autowired
     PointageRepository pointageRepository;
+
+    @Autowired
+    ReglementHoraireInterieurService reglementHoraireInterieurService;
     
     /**
      * Créer un pointage fille
@@ -81,7 +91,10 @@ public class PointageFilleService {
      * Mettre à jour un pointage fille
      */
     @Transactional
-    public PointageFille updatePointageFille(String id, PointageFille pointageFilleDetails) {
+    public PointageFille updatePointageFille(String id, PointageFille pointageFilleDetails, String commentaire) {
+        if (commentaire == null || commentaire.trim().isEmpty()) {
+            throw new IllegalArgumentException("Le commentaire est obligatoire pour toute modification");
+        }
         PointageFille pointageFille = getPointageFilleById(id);
         
         // Mettre à jour les champs modifiables
@@ -96,6 +109,7 @@ public class PointageFilleService {
         }
         
         PointageFille updated = pointageFilleRepository.save(pointageFille);
+        recalculerPointageParent(pointageFille.getPointage().getId(), commentaire);
         // log.info("Pointage fille mis à jour: {}", id);
         
         return updated;
@@ -142,6 +156,16 @@ public class PointageFilleService {
      */
     public List<PointageFille> getPointagesFillesByPeriod(LocalDateTime start, LocalDateTime end) {
         return pointageFilleRepository.findByDateHeurePointageBetween(start, end);
+    }
+
+    /**
+     * Obtenir les pointages filles d'un employÃ© pour une date donnÃ©e
+     */
+    public List<PointageFille> getPointagesFillesByEmployeAndDate(String employeId, LocalDate date) {
+        LocalDateTime start = date.atStartOfDay();
+        LocalDateTime end = date.atTime(23, 59, 59);
+        return pointageFilleRepository
+                .findByEmployeIdAndDateBetweenOrderByDateHeurePointageAsc(employeId, start, end);
     }
     
     /**
@@ -190,7 +214,79 @@ public class PointageFilleService {
     public List<PointageFille> getEntreesSansSortie() {
         return pointageFilleRepository.findEntreesSansSortie();
     }
-    
+
+    private void recalculerPointageParent(String pointageId, String commentaire) {
+        Pointage pointage = pointageRepository.findById(pointageId)
+                .orElseThrow(() -> new RuntimeException("Pointage parent non trouvÃ©: " + pointageId));
+
+        List<PointageFille> filles = pointageFilleRepository
+                .findByPointageIdOrderByDateHeurePointageAsc(pointageId);
+
+        if (filles.isEmpty()) {
+            pointage.setDureeHeureTravailleeMinute(0.0);
+            pointage.setDureeRetardMinute(0.0);
+            pointageRepository.save(pointage);
+            return;
+        }
+
+        LocalDateTime heureArrivee = filles.get(0).getDateHeurePointage();
+        LocalDateTime heureDepart = filles.get(filles.size() - 1).getDateHeurePointage();
+
+        pointage.setDateHeureArrivee(heureArrivee);
+        pointage.setDateHeureDepart(heureDepart);
+
+        long totalMinutes = Duration.between(heureArrivee, heureDepart).toMinutes();
+        if (totalMinutes < 0) totalMinutes = 0;
+
+        ReglementHoraireInterieur reglement = reglementHoraireInterieurService.getReglementActif();
+        LocalTime heureEntreeNormale = reglement != null ? reglement.getHeureMatEntree() : null;
+        LocalTime heureSortieNormale = reglement != null ? reglement.getHeureApremSortie() : null;
+        BigDecimal pauseNormaleMinutes = reglement != null ? reglement.getDureeNormalePauseMinutes() : null;
+        long pauseSeuil = pauseNormaleMinutes != null ? pauseNormaleMinutes.longValue() : 60;
+
+        long pauseMinutes = 0;
+        long retardPause = 0;
+
+        for (int i = 1; i < filles.size() - 1; i += 2) {
+            LocalDateTime debutPause = filles.get(i).getDateHeurePointage();
+            LocalDateTime finPause = filles.get(i + 1).getDateHeurePointage();
+            long gap = Duration.between(debutPause, finPause).toMinutes();
+            if (gap > 0) {
+                pauseMinutes += gap;
+                if (gap > pauseSeuil) {
+                    retardPause += (gap - pauseSeuil);
+                }
+            }
+        }
+
+        long travailMinutes = totalMinutes - pauseMinutes;
+        if (travailMinutes < 0) travailMinutes = 0;
+
+        long retardEntree = 0;
+        if (heureEntreeNormale != null && heureArrivee.toLocalTime().isAfter(heureEntreeNormale)) {
+            retardEntree = Duration.between(heureEntreeNormale, heureArrivee.toLocalTime()).toMinutes();
+        }
+
+        pointage.setDureeHeureTravailleeMinute((double) travailMinutes);
+        pointage.setDureeRetardMinute((double) (retardEntree + retardPause));
+
+        long minutesSup = 0;
+        if (heureSortieNormale != null && heureDepart.toLocalTime().isAfter(heureSortieNormale)) {
+            minutesSup = Duration.between(heureSortieNormale, heureDepart.toLocalTime()).toMinutes();
+        }
+        pointage.setDureeHeureSupplementaire((double) Math.max(0, minutesSup));
+
+        String prefix = "[MODIF " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) + "] ";
+        String existing = pointage.getCommentaire();
+        if (existing != null && !existing.trim().isEmpty()) {
+            pointage.setCommentaire(existing + "\n" + prefix + commentaire.trim());
+        } else {
+            pointage.setCommentaire(prefix + commentaire.trim());
+        }
+
+        pointageRepository.save(pointage);
+    }
+
     /**
      * Générer un ID unique pour le pointage fille
      */

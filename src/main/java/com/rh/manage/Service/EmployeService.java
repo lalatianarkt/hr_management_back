@@ -33,6 +33,7 @@ import com.rh.manage.Repository.InfosProfessionnellesRepository;
 import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -170,12 +171,25 @@ public class EmployeService {
         return employeUpdated;
     }
 
+    public List<Employe> findByStatut(int statut){
+        return employeRepository.findByStatut(statut);
+    }
+
     public Long countTotalEmployeInactif(){
         return (long) employeRepository.findByStatut(1).size();
     }
 
     public Long countTotalEmployes() {
         return (long) employeRepository.findByStatut(0).size();
+    }
+
+    public Long countEmployesByDepartement(String departementId) {
+        if (departementId == null || departementId.trim().isEmpty()) {
+            return 0L;
+        }
+        return (long) employeRepository.findWithFiltersWithoutPagination(
+                null, null, null, departementId, null, 0L
+        ).size();
     }
 
     public List<Employe> getAllEmpArchived(){
@@ -207,13 +221,33 @@ public class EmployeService {
                 System.out.println("++++++++++++++++++++++++++++idEmp : " + id);
             }
     System.out.println("sizeoffff : " + managerEmployeIds.size());
-    
-    if (hasAnyFilter(matricule, nom, prenom, departementId, statutId, typeContratId)) {
-        allEmployes = employeRepository.findWithFiltersWithoutPagination(
+    System.out.println("statut : " + statutId);
+    if(statutId != null){
+        if(statutId == 2){
+            if (hasAnyFilter(matricule, nom, prenom, departementId, statutId, typeContratId)){
+            allEmployes = employeRepository.findInactivedNotArchivesWithFiltersWithoutPagination(matricule, 
+            nom, prenom, departementId, typeContratId, statutId
+            );
+            } else {
+                allEmployes = employeRepository.findAllNotArchived();
+            }
+        } else {
+            if (hasAnyFilter(matricule, nom, prenom, departementId, statutId, typeContratId)){
+            allEmployes = employeRepository.findAllNotArchivesWithFiltersWithoutPagination(matricule, 
+            nom, prenom, departementId, typeContratId, statutId
+            );
+            } else {
+                allEmployes = employeRepository.findAllNotArchived();
+            }
+        }
+    } else {
+        if (hasAnyFilter(matricule, nom, prenom, departementId, statutId, typeContratId)) {
+        allEmployes = employeRepository.findAllNotArchivesWithFiltersWithoutPagination(
             matricule, nom, prenom, departementId, typeContratId, statutId
         );
-    } else {
-        allEmployes = employeRepository.findAllActiveEmployeesWithoutPagination();
+        } else {
+            allEmployes = employeRepository.findAllNotArchived();
+        }
     }
     
     // Convertir tous les employés en DTO
@@ -232,13 +266,14 @@ public class EmployeService {
             
             if (infosActives != null) {
                 // Condition 1: L'employé a un manager dans ses infos pro (c'est un manager)
-                boolean hasManagerInInfos = infosActives.getManager() == null;
+                // boolean hasManagerInInfos = infosActives.getManager() == null;
                 
                 // Condition 2: L'ID de l'employé (String) est dans la liste des managers (table Manager)
                 boolean isInManagerList = managerEmployeIds.contains(infosActives.getEmploye().getId());
                 
                 // Un employé est manager si l'une des deux conditions est vraie
-                isManagerFlag = hasManagerInInfos && isInManagerList;
+                // isManagerFlag = hasManagerInInfos && isInManagerList;
+                isManagerFlag = isInManagerList;
             }
             
             return new EmployeInfosDTO(employe, 
@@ -386,7 +421,7 @@ public class EmployeService {
     }
 
     public EmployeInfosDTO getEmployeWithInfosById(String id) {
-        Optional<Employe> employeOpt = employeRepository.findByIdAndStatut(id, 0);
+        Optional<Employe> employeOpt = getEmployeActifOuInactifById(id);
         if (employeOpt.isPresent()) {
             Employe employe = employeOpt.get();
             List<InfosProfessionnelles> infosProOpt = infosProfessionnellesRepository.findByEmployeIdAndStatut(id);
@@ -658,6 +693,16 @@ public class EmployeService {
     public Optional<Employe> getEmployeActifById(String id) {
         return employeRepository.findByIdAndStatut(id, 0);
         // return Optional.ofNullable(employe);
+    }
+
+    // Récupérer tous les employés avec statut = 0 ou 2
+    public List<Employe> getEmployesActifsOuInactifs() {
+        return employeRepository.findByStatutIn(Arrays.asList(0, 2));
+    }
+
+    // Récupérer un employé par ID avec statut = 0 ou 2
+    public Optional<Employe> getEmployeActifOuInactifById(String id) {
+        return employeRepository.findByIdAndStatutIn(id, Arrays.asList(0, 2));
     }
     
     // Récupérer les infos professionnelles avec statut = 0 d'un employé

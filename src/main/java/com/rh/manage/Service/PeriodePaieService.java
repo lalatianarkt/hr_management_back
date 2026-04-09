@@ -103,9 +103,13 @@ public class PeriodePaieService {
     }   
 
     public PeriodePaie getPeriodePaieActif(){
+        System.out.println("ato anaty periode paie actif+++++++++++++++++00");
         if(getPeriodePaiesByStatut(0).isPresent()){
+            System.out.println("ato ve ??????????????????? ");
+            System.out.println("id : " + getPeriodePaiesByStatut(0).get().getId());
             return getPeriodePaiesByStatut(0).get();
         } else{
+            System.out.println("tsisy actif hono e");
             return null;
         }  
     } 

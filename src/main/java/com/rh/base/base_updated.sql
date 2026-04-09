@@ -723,6 +723,8 @@ CREATE TABLE mouvement(
    date_demande DATE NOT NULL,
    date_validation DATE,
    commentaire VARCHAR(255) ,
+   commentaire_manager varchar(255) ,
+   commentaire_annulation varchar(255),
    created_at TIMESTAMP NOT NULL,
    modified_at TIMESTAMP,
    id_employe_validateur VARCHAR(50) ,
@@ -992,7 +994,7 @@ CREATE TABLE paie(
    statut INTEGER,
    created_at TIMESTAMP NOT NULL,
    modified_at TIMESTAMP,
-   id_info_societte INTEGER NOT NULL,
+   id_info_societe INTEGER NOT NULL,
    id_employe VARCHAR(50) ,
    id_periode varchar(50),
    PRIMARY KEY(id),
@@ -1027,6 +1029,53 @@ CREATE TABLE paie_fille(
    PRIMARY KEY(id),
    FOREIGN KEY(id_paie) REFERENCES paie(id),
    FOREIGN KEY(id_rubrique) REFERENCES rubrique_paie(id)
+);
+
+CREATE TYPE mode_calcul_enum AS ENUM (
+    'AUTO',
+    'CALCULE',
+    'MANUEL'
+);
+
+CREATE TABLE rubrique_paie(
+   id VARCHAR(50) ,
+   code VARCHAR(20) ,
+   mode_calcul VARCHAR(50) ,
+   libelle VARCHAR(100) ,
+   plafond_mensuel VARCHAR(50) ,
+   est_imposable BOOLEAN,
+   est_soumis_cotisations BOOLEAN,
+   compte_comptable INTEGER,
+   ordre INTEGER,
+   est_actif BOOLEAN,
+   plafond_annuel NUMERIC(10,2) ,
+   commentaire TEXT,
+   modified_at TIMESTAMP,
+   created_at TIMESTAMP NOT NULL,
+   id_categorie VARCHAR(50) ,
+   id_rubrique TEXT,
+   id_formule VARCHAR(20),
+   PRIMARY KEY(id),
+   FOREIGN KEY(id_categorie) REFERENCES categorie_rub(id),
+   FOREIGN KEY(id_rubrique) REFERENCES rubrique_types(id),
+   FOREIGN KEY(id_formule) REFERENCES formule(id)
+);
+
+CREATE TABLE categorie_rub(
+   id VARCHAR(50) ,
+   libelle VARCHAR(150) ,
+   created_at TIMESTAMP NOT NULL,
+   modified_at TIMESTAMP,
+   PRIMARY KEY(id)
+);
+
+CREATE TABLE rubrique_types(
+   id TEXT,
+   libelle VARCHAR(100) ,
+   description TEXT,
+   created_at TIMESTAMP NOT NULL,
+   modified_at TIMESTAMP,
+   PRIMARY KEY(id)
 );
 
 CREATE TABLE formule(
@@ -1064,35 +1113,7 @@ CREATE TABLE paie_fille_irsa(
    FOREIGN KEY(id_paie_fille) REFERENCES paie_fille(id)
 );
 
-CREATE TYPE mode_calcul_enum AS ENUM (
-    'AUTO',
-    'CALCULE',
-    'MANUEL'
-);
 
-CREATE TABLE rubrique_paie(
-   id VARCHAR(50) ,
-   code VARCHAR(20) ,
-   mode_calcul VARCHAR(50) ,
-   libelle VARCHAR(100) ,
-   plafond_mensuel VARCHAR(50) ,
-   est_imposable BOOLEAN,
-   est_soumis_cotisations BOOLEAN,
-   compte_comptable INTEGER,
-   ordre INTEGER,
-   est_actif BOOLEAN,
-   plafond_annuel NUMERIC(10,2) ,
-   commentaire TEXT,
-   modified_at TIMESTAMP,
-   created_at TIMESTAMP NOT NULL,
-   id_categorie VARCHAR(50) ,
-   id_rubrique TEXT,
-   id_formule VARCHAR(20),
-   PRIMARY KEY(id),
-   FOREIGN KEY(id_categorie) REFERENCES categorie_rub(id),
-   FOREIGN KEY(id_rubrique) REFERENCES rubrique_types(id),
-   FOREIGN KEY(id_formule) REFERENCES formule(id)
-);
 
 alter table regle_gestion_conges add column allocation_familiale NUMERIC(10, 2);
 alter table rubrique_paie add column est_deductible_irsa BOOLEAN default false;
@@ -1105,22 +1126,7 @@ ADD CONSTRAINT formule_id_formule_fkey
 FOREIGN KEY (id_formule)
 REFERENCES formule(id);
 
-CREATE TABLE categorie_rub(
-   id VARCHAR(50) ,
-   libelle VARCHAR(150) ,
-   created_at TIMESTAMP NOT NULL,
-   modified_at TIMESTAMP,
-   PRIMARY KEY(id)
-);
 
-CREATE TABLE rubrique_types(
-   id TEXT,
-   libelle VARCHAR(100) ,
-   description TEXT,
-   created_at TIMESTAMP NOT NULL,
-   modified_at TIMESTAMP,
-   PRIMARY KEY(id)
-);
 
 CREATE TABLE base_irsa(
    id VARCHAR(50) ,

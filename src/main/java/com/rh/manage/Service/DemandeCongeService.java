@@ -1,5 +1,6 @@
 package com.rh.manage.Service;
 
+import com.rh.manage.Dto.AttestationCongeData;
 import com.rh.manage.Model.DemandeConge;
 import com.rh.manage.Model.DepartementManager;
 import com.rh.manage.Model.Employe;
@@ -15,6 +16,7 @@ import com.rh.manage.Model.User;
 import com.rh.manage.Model.UserRole;
 import com.rh.manage.Repository.DemandeCongeRepository;
 
+import com.rh.manage.Service.AutomatisationService;
 import com.rh.manage.Service.EmployeService;
 import io.jsonwebtoken.Claims;
 
@@ -69,6 +71,12 @@ public class DemandeCongeService {
 
     @Autowired
     private EmployeService employeService;
+
+    @Autowired
+    AutomatisationService automatisationService;
+
+    @Autowired
+    private AttestationCongeDataService attestationCongeDataService;
 
     private static final String[] NOMS_MOIS = {
         "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
@@ -196,21 +204,7 @@ public class DemandeCongeService {
             demandeConge.setStatut(1);
             demandeConge.setDateValidation(LocalDate.now());
             DemandeConge demandeCongeUpdated = update(demandeConge.getId(), demandeConge);
-
-
-            Notification notifications = new Notification();
-            notifications.setMessage("Demande de congé de " + demandeConge.getNbJours() + " jours du " + demandeConge.getDateDebut() + " au " + demandeConge.getDateFin() + " à valider");
-            notifications.setReferenceType("DemandeConge");
-            notifications.setReferenceId(demandeConge.getId());
-            notifications.setIdUtilisateurExpediteur(userId);
-            notifications.setLien("/employees/" + demandeConge.getEmploye().getId() + "/conges");
-
-            List<UserRole> les_user_role = userRoleService.getByTypeName("Admin_RH");
-            for(UserRole ur : les_user_role){
-                notifications.setIdUtilisateurDestinataire(ur.getUser().getId());
-                notificationService.createNotification(notifications);
-            }
-            
+            notificationService.createNotificationsDemandeConge(demandeCongeUpdated, userId);
             return demandeCongeUpdated;
         } catch (RuntimeException e) {
             throw e;
@@ -236,16 +230,9 @@ public class DemandeCongeService {
     }
 
     @Transactional
-    public DemandeConge validateRHWithInsertionMouvement(DemandeConge demande, int idMouvement){
-        insertNouveauMvtAvecDemande(demande, idMouvement);
-        DemandeConge demandeUpdated = validerDemandeRH(demande);
-        return demandeUpdated;
-    }
-
-    // validation côté RH
-    public DemandeConge validerDemandeRH(DemandeConge demande) {
+    public DemandeConge validerDemandeRH(DemandeConge demande, Claims claims) {
         try {
-            // Vérifier si la demande existe
+            String userId = claims.getSubject();
             Optional<DemandeConge> opt = findById(demande.getId());
 
             if (opt.isEmpty()) {
@@ -253,21 +240,47 @@ public class DemandeCongeService {
             }
 
             DemandeConge demandeConge = opt.get();
-            // demandeConge.setStatut(1); // statut validé
             demandeConge.setCommentaire(demande.getCommentaire());
-            
-            // demandeConge.setStatut(1);  // statut validé
-
+            demandeConge.setStatut(6);
+            demandeConge.setDateValidation(LocalDate.now());
+            DemandeConge demandeUpdated = update(demande.getId(), demandeConge);
+            notificationService.createNotificationValidationConge(demandeUpdated, userId);
+            AttestationCongeData attestation = attestationCongeDataService.createCongeValidation(demandeUpdated);
+            automatisationService.sendEmailNotificationDemandeConge(attestation);
             // Mise à jour
-            return update(demande.getId(), demandeConge);
+            return demandeUpdated;
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de la validation de la demande : " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional
+    public DemandeConge refuserDemandeRH(DemandeConge demande, Claims claims) {
+        try {
+            String userId = claims.getSubject();
+            Optional<DemandeConge> opt = findById(demande.getId());
+
+            if (opt.isEmpty()) {
+                throw new RuntimeException("Demande de conge introuvable pour l'id : " + demande.getId());
+            }
+
+            DemandeConge demandeConge = opt.get();
+            demandeConge.setCommentaire(demande.getCommentaire());
+            demandeConge.setStatut(7);
+            demandeConge.setDateValidation(LocalDate.now());
+
+            DemandeConge demandeUpdated = update(demande.getId(), demandeConge);
+            notificationService.createNotificationValidationConge(demandeUpdated, userId);
+            AttestationCongeData attestation = attestationCongeDataService.createCongeValidation(demandeUpdated);
+            automatisationService.sendEmailNotificationDemandeConge(attestation);
+            return demandeUpdated;
 
         } catch (RuntimeException e) {
-            // Erreurs métier (ID inexistant)
             throw e;
-
         } catch (Exception e) {
-            // Erreurs techniques (database, null pointer, etc.)
-            throw new RuntimeException("Erreur lors de la validation de la demande : " + e.getMessage(), e);
+            throw new RuntimeException("Erreur lors du refus RH de la demande : " + e.getMessage(), e);
         }
     }
     

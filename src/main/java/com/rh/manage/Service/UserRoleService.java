@@ -35,6 +35,10 @@ public class UserRoleService {
         return userRoleRepository.findByUserId(userId);
     }
 
+    public List<UserRole> getByEmployeId(String employeId) {
+        return userRoleRepository.findByEmployeId(employeId);
+    }
+
     public List<UserRole> getByTypeId(Integer typeUserId) {
         // Correction : utiliser findById_TypeUserId
         return userRoleRepository.findByTypeUserId(typeUserId);

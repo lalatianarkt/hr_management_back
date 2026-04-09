@@ -223,6 +223,7 @@ public class DashboardRHDTO {
     private KPIDTO masseSalariale;
     private KPIDTO heuresSupplementaires;
     private KPIDTO retardsCumules;
+    private KPIDTO evaluation;
     
     // ==================== STATISTIQUES DÉTAILLÉES ====================
     private StatsEffectifDTO statsEffectif;
@@ -397,6 +398,14 @@ public class DashboardRHDTO {
         this.retardsCumules = retardsCumules;
     }
 
+    public KPIDTO getEvaluation() {
+        return evaluation;
+    }
+
+    public void setEvaluation(KPIDTO evaluation) {
+        this.evaluation = evaluation;
+    }
+
     public StatsEffectifDTO getStatsEffectif() {
         return statsEffectif;
     }
@@ -505,7 +514,6 @@ public class DashboardRHDTO {
                 '}';
     }
 }
-
 
 
 

@@ -78,7 +78,7 @@ public class PaieService {
             System.out.println("au moins eto");
             for (Paie paie : paies) {
                 try {
-                    if(paieRepository.existsByEmployeIdAndPeriodeId(paie.getEmploye().getId(), paie.getPeriodePaie().getId())){
+                    if(paieRepository.existsByEmployeIdAndPeriodeId(paie.getEmploye().getId(), periodePaie.getId())){
                         throw new Exception("Une paie pour cette période exsite déjà");
                     }
                     // Créer la nouvelle paie
@@ -138,6 +138,7 @@ public class PaieService {
                     lesNewPaies.add(newPaie);
                     
                 } catch (Exception e) {
+                    e.printStackTrace();
                     erreurs.add("Erreur pour l'employé " + paie.getEmploye().getId() + ": " + e.getMessage());
                 }
             }
@@ -155,6 +156,7 @@ public class PaieService {
             paieRepository.flush();
             
         } catch (Exception e) {
+            e.printStackTrace();
             throw new Exception("Erreur lors de la génération: " + e.getMessage() + 
                             (erreurs.isEmpty() ? "" : " Détails: " + String.join("; ", erreurs)));
         }

@@ -56,8 +56,10 @@ public class StatAllInfoService {
         statAllInfoDTO.setNb_contrat_cdd(infosProfessionnellesService.getAllInfosProParTypeContrat("CDD").size());
         statAllInfoDTO.setNb_contrat_cdi(infosProfessionnellesService.getAllInfosProParTypeContrat("CDI").size());
         statAllInfoDTO.setNb_employe(employeService.findAllEmployeesActived().size());
+        statAllInfoDTO.setNb_employe_inactif(employeService.findByStatut(2).size());
         statAllInfoDTO.setNb_poste(calculNbPosteOccupe(infosProfessionnellesService.getAllInfoProActif()));
         statAllInfoDTO.setNb_employes_en_conges(demandeCongeService. findTodayDemandeCongeActif().size());
+        statAllInfoDTO.setNb_contrat_autre(infosProfessionnellesService.getAllInfosProContratsAutresQueCdiCdd().size());
         // statAllInfoDTO.setNb_employes_en_conges(demandeCongeService.findTodayDemandeCongeActif().size());
         // statAllInfoDTO.
         return statAllInfoDTO;

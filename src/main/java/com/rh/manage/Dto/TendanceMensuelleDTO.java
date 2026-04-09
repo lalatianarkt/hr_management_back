@@ -7,6 +7,7 @@ public class TendanceMensuelleDTO {
     private double tauxAbsenteeisme;
     private double heuresTravaillees;
     private double congesPris;
+    private double retards;
     private double variationEffectif; // % vs mois précédent
     private double variationPresence; // % vs mois précédent
     public String getMois() {
@@ -45,6 +46,12 @@ public class TendanceMensuelleDTO {
     public void setCongesPris(double congesPris) {
         this.congesPris = congesPris;
     }
+    public double getRetards() {
+        return retards;
+    }
+    public void setRetards(double retards) {
+        this.retards = retards;
+    }
     public double getVariationEffectif() {
         return variationEffectif;
     }
@@ -60,5 +67,4 @@ public class TendanceMensuelleDTO {
 
     
 }
-
 

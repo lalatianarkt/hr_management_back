@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Entity
 @Table(name = "paie")
@@ -108,9 +109,9 @@ public class Paie {
     public void prePersist() {
         // Générer l'ID si null ou vide
         if (this.id == null || this.id.trim().isEmpty()) {
-            String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHHmm"));
-            this.id = "SM-P-" + datePart + "-" + 
-                    Math.abs(new Random().nextInt(100));
+            String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHHmmssSSS"));
+            String random = String.format("%03d", ThreadLocalRandom.current().nextInt(1000));
+            this.id = "SM-P-" + datePart + "-" + random;
         }
         
         // Définir la date de création si null

@@ -635,3 +635,20 @@ INSERT INTO users (id, email, password, created_at, modified_at, statut, id_type
 INSERT INTO users (id, email, password, created_at, modified_at, statut, id_type_user, id_employe) VALUES ('USR-TEST-0120', 'hasina.razanakoto120@gmail.com', 'password123', 'NOW()', 'NOW()', '1', '3', 'EMP-TEST-0120');
 
 COMMIT;
+
+INSERT INTO infos_professionnelles (id, date_embauche, 
+created_at, modified_at, id_poste, 
+id_type_contrat, id_employe, id_manager, 
+statut, date_debauche, 
+date_debut_assignation_poste, 
+date_fin_assignation_poste, salaire_base, 
+matricule, motif_depart, id_departement, 
+id_type_entree, id_categorie, classification, id_temps_travail) VALUES
+('INF400', '2022-09-10',
+ 'now()', 'now()', 'POST020',
+'CONT002', 'EMP113', 'MGR005',
+1, null, 
+'2022-09-10',
+'2022-12-10', 1200000,
+2404, null, 'DEP5',
+'TE01', 'CPG04', 'C1', 1);

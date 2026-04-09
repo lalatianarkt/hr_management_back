@@ -32,8 +32,8 @@ public interface AbsenceCongeRepository extends JpaRepository<AbsenceCongeView, 
            "(:employeId IS NULL OR a.employeId = :employeId) AND " +
            "(:departementId IS NULL OR a.idDepartement = :departementId) AND " +
            "(:typeAbsence IS NULL OR a.typeAbsence = :typeAbsence) AND " +
-           "(:dateDebut IS NULL OR a.dateAbsence >= :dateDebut) AND " +
-           "(:dateFin IS NULL OR a.dateAbsence <= :dateFin)")
+           "a.dateAbsence >= COALESCE(:dateDebut, a.dateAbsence) AND " +
+           "a.dateAbsence <= COALESCE(:dateFin, a.dateAbsence)")
     List<AbsenceCongeView> findWithFilters(
             @Param("employeId") String employeId,
             @Param("departementId") String departementId,

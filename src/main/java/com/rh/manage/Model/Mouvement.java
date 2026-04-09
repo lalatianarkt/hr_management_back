@@ -25,8 +25,14 @@ public class Mouvement {
     @Column(name = "date_validation")
     private LocalDate dateValidation;
 
-    @Column(length = 255)
+    @Column(length = 255, name = "commentaire")
     private String commentaire;
+
+    @Column(name = "commentaire_manager", length = 255)
+    private String commentaireManager;
+
+    @Column(name = "commentaire_annulation", length = 255)
+    private String commentaireAnnulation;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -147,5 +153,21 @@ public class Mouvement {
     // Méthode utilitaire pour vérifier si le mouvement est appliqué
     public boolean estApplique() {
         return this.statut != null && this.statut == 3;
+    }
+
+    public String getCommentaireManager() {
+        return commentaireManager;
+    }
+
+    public void setCommentaireManager(String commentaireManager) {
+        this.commentaireManager = commentaireManager;
+    }
+
+    public String getCommentaireAnnulation() {
+        return commentaireAnnulation;
+    }
+
+    public void setCommentaireAnnulation(String commentaireAnnulation) {
+        this.commentaireAnnulation = commentaireAnnulation;
     }
 }

@@ -97,6 +97,25 @@ public class VueEmployeManagerCompletService {
                     
                     // Convertir les subordonnés en format compact
                     List<EmployeCompactDTO> subordonnesCompacts = subordonnes.stream()
+                        // Exclure le manager lui-meme si present dans sa propre liste
+                        .filter(emp -> {
+                            if (infoManager != null) {
+                                if (infoManager.getIdEmploye() != null && infoManager.getIdEmploye().equals(emp.getIdEmploye())) {
+                                    return false;
+                                }
+                                if (infoManager.getEmployeMatricule() != null && infoManager.getEmployeMatricule().equals(emp.getEmployeMatricule())) {
+                                    return false;
+                                }
+                                if (infoManager.getNomComplet() != null && infoManager.getNomComplet().equals(emp.getNomComplet())) {
+                                    return false;
+                                }
+                            } else {
+                                if (nomManager != null && nomManager.equals(emp.getNomComplet())) {
+                                    return false;
+                                }
+                            }
+                            return true;
+                        })
                         .map(this::convertirEnEmployeCompactDTO)
                         .collect(Collectors.toList());
                     
@@ -330,6 +349,25 @@ public class VueEmployeManagerCompletService {
                     
                     // Convertir les subordonnés en format compact
                     List<EmployeCompactDTO> subordonnesCompacts = subordonnes.stream()
+                        // Exclure le manager lui-meme si present dans sa propre liste
+                        .filter(emp -> {
+                            if (infoManager != null) {
+                                if (infoManager.getIdEmploye() != null && infoManager.getIdEmploye().equals(emp.getIdEmploye())) {
+                                    return false;
+                                }
+                                if (infoManager.getEmployeMatricule() != null && infoManager.getEmployeMatricule().equals(emp.getEmployeMatricule())) {
+                                    return false;
+                                }
+                                if (infoManager.getNomComplet() != null && infoManager.getNomComplet().equals(emp.getNomComplet())) {
+                                    return false;
+                                }
+                            } else {
+                                if (nomManager != null && nomManager.equals(emp.getNomComplet())) {
+                                    return false;
+                                }
+                            }
+                            return true;
+                        })
                         .map(this::convertirEnEmployeCompactDTO)
                         .collect(Collectors.toList());
                     

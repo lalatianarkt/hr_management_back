@@ -616,7 +616,7 @@ SELECT DISTINCT ON (dc.id)
         WHEN 1 THEN 'validé par le manager'
         WHEN 2 THEN 'refusé par le manager'
         WHEN 3 THEN 'annulé par le demandeur'
-        WHEN 4 THEN 'annulé par le RH'
+        WHEN 4 THEN 'annulé par le responsable'
         WHEN 5 THEN 'acquis'
         WHEN 6 THEN 'validé par le RH'
         WHEN 7 THEN 'refusé par le RH'
@@ -738,20 +738,40 @@ where p.date_pointage >= date_trunc('month', current_date - interval '3 month')
 group by e.id, i.matricule, i.id_departement, i.departement;
 
 -- Version 2 --
-create or replace view vue_pointage_employe_v2 as
-select 
-    e.id as id_employe,
+-- create or replace view vue_pointage_employe_v2 as
+-- select 
+--     e.id as id_employe,
+--     i.matricule,
+--     e.nom || ' ' || e.prenom as nom_complet,
+--     p.date_pointage,
+--     p.duree_heure_travaillee_minute,
+--     p.duree_retard_minute,
+--     p.duree_heure_supplementaire,
+--     i.id_departement,
+--     i.departement as departement_nom
+-- from pointage p
+-- join employe e on p.id_employe = e.id
+-- left join employe_info i on e.id = i.id_employe;
+
+CREATE OR REPLACE VIEW vue_pointage_employe_v2 AS
+SELECT 
+    e.id AS id_employe,
     i.matricule,
-    e.nom || ' ' || e.prenom as nom_complet,
+    e.nom || ' ' || e.prenom AS nom_complet,
     p.date_pointage,
     p.duree_heure_travaillee_minute,
     p.duree_retard_minute,
     p.duree_heure_supplementaire,
     i.id_departement,
-    i.departement as departement_nom
-from pointage p
-join employe e on p.id_employe = e.id
-left join employe_info i on e.id = i.id_employe;
+    i.departement AS departement_nom
+FROM pointage p
+JOIN employe e ON p.id_employe = e.id
+LEFT JOIN (
+    SELECT DISTINCT ON (id_employe) *
+    FROM employe_info
+    ORDER BY id_employe, date_embauche DESC
+) i ON e.id = i.id_employe;
+
 
 -- Pour le mois en cours
 where p.date_pointage >= date_trunc('month', current_date)
@@ -825,10 +845,46 @@ WHERE NOT EXISTS (
 )
 ORDER BY dates.date_pointage DESC, e.nom_complet;
 
-create or replace view vue_absence_conge as
+-- create or replace view vue_absence_conge as
+-- SELECT 
+--     dates.date_pointage AS date_absence,
+--     e.employe_id AS employe_id,
+--     e.nom_complet,
+--     e.matricule,
+--     e.departement_nom,
+--     e.nom_poste,
+--     e.id_departement,
+--     CASE 
+--         WHEN EXISTS (
+--             SELECT 1
+--             FROM demande_conge dc
+--             WHERE dc.id_employe = e.employe_id
+--             AND dc.date_debut <= dates.date_pointage
+--             AND dc.date_fin >= dates.date_pointage
+--             AND dc.decision_manager IN (1, 5) -- Congés approuvés
+--         ) THEN 'conge'
+--         ELSE 'absence'
+--     END AS type_absence
+-- FROM vue_employe_manager e
+-- CROSS JOIN (
+--     -- Toutes les dates où il y a eu au moins un pointage
+--     SELECT DISTINCT date_pointage
+--     FROM pointage
+--     WHERE date_pointage >= CURRENT_DATE - INTERVAL '100 days'
+-- ) dates
+-- WHERE NOT EXISTS (
+--     -- Cet employé n'a pas pointé à cette date
+--     SELECT 1
+--     FROM pointage p
+--     WHERE p.id_employe = e.employe_id
+--     AND p.date_pointage = dates.date_pointage
+-- )
+-- ORDER BY dates.date_pointage DESC, e.nom_complet;
+
+CREATE OR REPLACE VIEW vue_absence_conge AS
 SELECT 
     dates.date_pointage AS date_absence,
-    e.employe_id AS employe_id,
+    e.employe_id,
     e.nom_complet,
     e.matricule,
     e.departement_nom,
@@ -839,27 +895,29 @@ SELECT
             SELECT 1
             FROM demande_conge dc
             WHERE dc.id_employe = e.employe_id
-            AND dc.date_debut <= dates.date_pointage
-            AND dc.date_fin >= dates.date_pointage
-            AND dc.decision_manager IN (1, 5) -- Congés approuvés
+              AND dc.date_debut <= dates.date_pointage
+              AND dc.date_fin >= dates.date_pointage
+              AND dc.statut IN (1, 4)
         ) THEN 'conge'
         ELSE 'absence'
     END AS type_absence
-FROM vue_employe_manager e
+FROM (
+    SELECT DISTINCT ON (employe_id) *
+    FROM vue_employe_manager
+    ORDER BY employe_id
+) e
 CROSS JOIN (
-    -- Toutes les dates où il y a eu au moins un pointage
     SELECT DISTINCT date_pointage
     FROM pointage
-    WHERE date_pointage >= CURRENT_DATE - INTERVAL '100 days'
 ) dates
 WHERE NOT EXISTS (
-    -- Cet employé n'a pas pointé à cette date
     SELECT 1
     FROM pointage p
     WHERE p.id_employe = e.employe_id
-    AND p.date_pointage = dates.date_pointage
+      AND p.date_pointage = dates.date_pointage
 )
 ORDER BY dates.date_pointage DESC, e.nom_complet;
+
 
 create or replace view reporting_presence as
 SELECT 

@@ -58,7 +58,12 @@ public class AbsenceCongeController {
     }
     
     @GetMapping("/statistiques/globales")
-    public ResponseEntity<StatistiquesAbsenceDTO> getStatistiquesGlobales() {
+    public ResponseEntity<StatistiquesAbsenceDTO> getStatistiquesGlobales(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateDebut,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFin) {
+        if (dateDebut != null && dateFin != null) {
+            return ResponseEntity.ok(absenceCongeService.getStatistiquesGlobales(dateDebut, dateFin));
+        }
         return ResponseEntity.ok(absenceCongeService.getStatistiquesGlobales());
     }
     

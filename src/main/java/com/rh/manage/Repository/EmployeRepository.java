@@ -21,6 +21,12 @@ public interface EmployeRepository extends JpaRepository<Employe, String> {
     // Récupérer un employé par ID avec statut = 0
     Optional<Employe> findByIdAndStatut(String id, int statut);
 
+    // Récupérer tous les employés avec statut = 0 ou 2
+    List<Employe> findByStatutIn(List<Integer> statuts);
+
+    // Récupérer un employé par ID avec statut = 0 ou 2
+    Optional<Employe> findByIdAndStatutIn(String id, List<Integer> statuts);
+
     // Alternative avec paramètre
     @Query("SELECT e FROM Employe e WHERE e.statut = :statut ORDER BY e.nom ASC, e.prenom ASC")
     List<Employe> findAllEmployeesByStatusSorted(int statut);
@@ -39,6 +45,9 @@ public interface EmployeRepository extends JpaRepository<Employe, String> {
     // Nouvelle méthode - récupère tous les employés actifs sans pagination
     @Query("SELECT e FROM Employe e WHERE e.statut = 0 ORDER BY e.nom, e.prenom")
     List<Employe> findAllActiveEmployeesWithoutPagination();
+
+    @Query("SELECT e FROM Employe e WHERE e.statut = 0 or e.statut = 2 ORDER BY e.nom, e.prenom")
+    List<Employe> findAllNotArchived();
 
     @Query("SELECT DISTINCT e FROM Employe e " +
        "JOIN InfosProfessionnelles ip ON e.id = ip.employe.id " +
@@ -83,5 +92,43 @@ public interface EmployeRepository extends JpaRepository<Employe, String> {
             @Param("statutId") Long statutId
     );
 
-}
+    @Query("SELECT DISTINCT e FROM Employe e " +
+        "JOIN InfosProfessionnelles ip ON e.id = ip.employe.id " +
+        "LEFT JOIN ip.departement d " +
+        "LEFT JOIN ip.typeContrat tc " +
+        "WHERE e.statut = :statutId " +
+        "AND ip.statut = 0 " +
+        "AND (:matricule IS NULL OR :matricule = '' OR LOWER(ip.matricule) LIKE LOWER(CONCAT('%', :matricule, '%'))) " +
+        "AND (:nom IS NULL OR :nom = '' OR LOWER(e.nom) LIKE LOWER(CONCAT('%', :nom, '%'))) " +
+        "AND (:prenom IS NULL OR :prenom = '' OR LOWER(e.prenom) LIKE LOWER(CONCAT('%', :prenom, '%'))) " +
+        "AND (:departementId IS NULL OR :departementId = '' OR d.id = :departementId) " +
+        "AND (:typeContratId IS NULL OR :typeContratId = '' OR tc.id = :typeContratId) ")
+    List<Employe> findAllNotArchivesWithFiltersWithoutPagination(
+            @Param("matricule") String matricule,
+            @Param("nom") String nom,
+            @Param("prenom") String prenom,
+            @Param("departementId") String departementId,
+            @Param("typeContratId") String typeContratId,
+            @Param("statutId") Long statutId
+    );
 
+    @Query("SELECT DISTINCT e FROM Employe e " +
+        "JOIN InfosProfessionnelles ip ON e.id = ip.employe.id " +
+        "LEFT JOIN ip.departement d " +
+        "LEFT JOIN ip.typeContrat tc " +
+        "WHERE e.statut = :statutId " +
+        "AND (:matricule IS NULL OR :matricule = '' OR LOWER(ip.matricule) LIKE LOWER(CONCAT('%', :matricule, '%'))) " +
+        "AND (:nom IS NULL OR :nom = '' OR LOWER(e.nom) LIKE LOWER(CONCAT('%', :nom, '%'))) " +
+        "AND (:prenom IS NULL OR :prenom = '' OR LOWER(e.prenom) LIKE LOWER(CONCAT('%', :prenom, '%'))) " +
+        "AND (:departementId IS NULL OR :departementId = '' OR d.id = :departementId) " +
+        "AND (:typeContratId IS NULL OR :typeContratId = '' OR tc.id = :typeContratId) ")
+    List<Employe> findInactivedNotArchivesWithFiltersWithoutPagination(
+            @Param("matricule") String matricule,
+            @Param("nom") String nom,
+            @Param("prenom") String prenom,
+            @Param("departementId") String departementId,
+            @Param("typeContratId") String typeContratId,
+            @Param("statutId") Long statutId
+    );
+
+}

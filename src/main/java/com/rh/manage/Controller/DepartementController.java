@@ -18,8 +18,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/departements")
-// @CrossOrigin(origins = "*")
- // permet les requêtes depuis le front (React, etc.)
 public class DepartementController {
 
     @Autowired
@@ -72,6 +70,9 @@ public class DepartementController {
     @PutMapping("/{id}")
     public ResponseEntity<?> updateDepartement(@PathVariable String id, @RequestBody Departement updatedDepartement) {
         try {
+            System.out.println("update++++++++++++++++++++++++++++++++++++++");
+            System.out.println("id : " + id);
+            updatedDepartement.setId(id);
             Departement saved = departementService.updateDepartement(updatedDepartement);
             return ResponseEntity.ok(saved);
         } catch (Exception e) {
