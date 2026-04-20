@@ -326,7 +326,7 @@ SELECT
     p.id,
     p.statut_cloture,
     pp.date_debut as date_debut_periode, 
-    pp.date_fin date_fin_periode,
+    pp.date_fin as date_fin_periode,
     i.nom_company,
     i.logo,
     pp.statut as statut_periode,
@@ -350,6 +350,18 @@ select
     join rubrique_paie rp on 
     pf.id_rubrique = rp.id 
     where rp.id_type = 'GAIN'  
+    GROUP by pf.id_paie; 
+
+create or replace view vue_charge_patronale as
+select 
+    pf.id_paie as paieId,
+    sum(pf.montant) as charge, 
+    sum(pf.taux) as total_taux,
+    sum(pf.base) as total_base
+    from paie_fille pf
+    join rubrique_paie rp on 
+    pf.id_rubrique = rp.id 
+    where rp.id_type = 'CHARGE'  
     GROUP by pf.id_paie; 
 
 CREATE OR REPLACE VIEW vue_total_retenue as 
@@ -509,6 +521,7 @@ SELECT
     COALESCE(vsb.total_base, 0) AS total_base,
     COALESCE(vtr.total_retenue, 0) AS total_retenue,
     COALESCE(vtc.total_cotisations, 0) AS total_cotisations,
+    coalesce(vc.charge, 0) as total_charges,
     
     -- Calculs derives
     -- Salaire net = Salaire brut - Total retenue
@@ -543,13 +556,14 @@ SELECT
         WHEN vdp.statut_periode = 2 THEN 'Payee'
         ELSE 'Statut inconnu'
     END AS statut_paie_libelle,
-    ei.mode_paiement,
+    ei.mode_paiement
     
 FROM employe_info ei
 JOIN vue_details_paie vdp ON ei.id_employe = vdp.id_employe
 LEFT JOIN vue_salaire_brut vsb ON vdp.id = vsb.paieId
 LEFT JOIN vue_total_retenue vtr ON vdp.id = vtr.paieId
 LEFT JOIN vue_total_cotisation vtc ON vdp.id = vtc.paieId
+left join vue_charge_patronale vc on vdp.id = vc.paieId
 
 -- Filtrer seulement les employes actifs
 WHERE ei.statut = 0
@@ -845,6 +859,29 @@ WHERE NOT EXISTS (
 )
 ORDER BY dates.date_pointage DESC, e.nom_complet;
 
+SELECT 
+    dates.date_pointage AS date_absence,
+    e.employe_id AS employe_id,
+    e.nom_complet,
+    e.matricule,
+    e.departement_nom,
+    e.nom_poste,
+    e.id_departement
+FROM vue_employe_manager e
+CROSS JOIN (
+    -- Toutes les dates où il y a eu au moins un pointage
+    SELECT DISTINCT date_pointage
+    FROM pointage
+) dates
+WHERE NOT EXISTS (
+    -- Cet employé n'a pas pointé à cette date
+    SELECT 1
+    FROM pointage p
+    WHERE p.id_employe = e.employe_id
+    AND p.date_pointage = dates.date_pointage
+)
+ORDER BY dates.date_pointage DESC, e.nom_complet;
+
 -- create or replace view vue_absence_conge as
 -- SELECT 
 --     dates.date_pointage AS date_absence,
@@ -897,7 +934,7 @@ SELECT
             WHERE dc.id_employe = e.employe_id
               AND dc.date_debut <= dates.date_pointage
               AND dc.date_fin >= dates.date_pointage
-              AND dc.statut IN (1, 4)
+              AND dc.statut = 5
         ) THEN 'conge'
         ELSE 'absence'
     END AS type_absence

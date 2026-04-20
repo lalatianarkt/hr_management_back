@@ -1,23 +1,31 @@
 package com.rh.manage.Dto;
 
+import java.util.List;
+
 public class UserListDTO {
     private String idUser;
+    private String matricule;
     private String nom;
     private String prenom;
     private String typeUser;
     private String departement;
     private Integer statut;
+    private List<Integer> roleIds;
+    private List<String> roleTypes;
 
     public UserListDTO() {
     }
 
-    public UserListDTO(String idUser, String nom, String prenom, String typeUser, String departement, Integer statut) {
+    public UserListDTO(String idUser, String matricule, String nom, String prenom, String typeUser, String departement, Integer statut, List<Integer> roleIds, List<String> roleTypes) {
         this.idUser = idUser;
+        this.matricule = matricule;
         this.nom = nom;
         this.prenom = prenom;
         this.typeUser = typeUser;
         this.departement = departement;
         this.statut = statut;
+        this.roleIds = roleIds;
+        this.roleTypes = roleTypes;
     }
 
     public String getIdUser() {
@@ -26,6 +34,14 @@ public class UserListDTO {
 
     public void setIdUser(String idUser) {
         this.idUser = idUser;
+    }
+
+    public String getMatricule() {
+        return matricule;
+    }
+
+    public void setMatricule(String matricule) {
+        this.matricule = matricule;
     }
 
     public String getNom() {
@@ -66,5 +82,21 @@ public class UserListDTO {
 
     public void setStatut(Integer statut) {
         this.statut = statut;
+    }
+
+    public List<Integer> getRoleIds() {
+        return roleIds;
+    }
+
+    public void setRoleIds(List<Integer> roleIds) {
+        this.roleIds = roleIds;
+    }
+
+    public List<String> getRoleTypes() {
+        return roleTypes;
+    }
+
+    public void setRoleTypes(List<String> roleTypes) {
+        this.roleTypes = roleTypes;
     }
 }

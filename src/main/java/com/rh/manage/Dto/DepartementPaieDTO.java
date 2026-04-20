@@ -8,6 +8,7 @@ public class DepartementPaieDTO {
     Departement departement;
     LocalDate date_debut_periode;
     int statut;
+    int nbPaieGenere;  
     
     public Departement getDepartement() {
         return departement;
@@ -27,6 +28,10 @@ public class DepartementPaieDTO {
     public void setStatut(int statut) {
         this.statut = statut;
     }
-
-    
+    public int getNbPaieGenere() {
+        return nbPaieGenere;
+    }
+    public void setNbPaieGenere(int nbPaieGenere) {
+        this.nbPaieGenere = nbPaieGenere;
+    }
 }

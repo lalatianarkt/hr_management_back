@@ -90,6 +90,90 @@ public class DashboardRHController {
         }
     }
 
+    @GetMapping("/taux-presence")
+    public ResponseEntity<?> getTauxPresence(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateDebut,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFin) {
+        try {
+            if (dateDebut == null || dateFin == null) {
+                return ResponseEntity.badRequest()
+                        .body(creerDashboardErreur("Les dates de dÃ©but et de fin sont obligatoires"));
+            }
+            if (dateDebut.isAfter(dateFin)) {
+                return ResponseEntity.badRequest()
+                        .body(creerDashboardErreur("La date de dÃ©but doit Ãªtre antÃ©rieure Ã  la date de fin"));
+            }
+
+            double taux = dashboardRHService.getTauxPresence(dateDebut, dateFin);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("dateDebut", dateDebut);
+            response.put("dateFin", dateFin);
+            response.put("tauxPresence", taux);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("error : " + e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(creerDashboardErreur("Erreur lors du calcul du taux de prÃ©sence: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/salaireBrut")
+    public ResponseEntity<?> getSalaireBrut(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateDebut,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFin) {
+        try {
+            if (dateDebut == null || dateFin == null) {
+                return ResponseEntity.badRequest()
+                        .body(creerDashboardErreur("Les dates de dÃ©but et de fin sont obligatoires"));
+            }
+            if (dateDebut.isAfter(dateFin)) {
+                return ResponseEntity.badRequest()
+                        .body(creerDashboardErreur("La date de dÃ©but doit Ãªtre antÃ©rieure Ã  la date de fin"));
+            }
+            double salaireBrut = dashboardRHService.calculerSalaireBrut(dateDebut, dateFin);
+            return ResponseEntity.ok(salaireBrut);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("error : " + e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(creerDashboardErreur("Erreur lors du calcul de la masse salariale: " + e.getMessage()));
+        }
+    }
+    
+
+    @GetMapping("/masse-salariale")
+    public ResponseEntity<?> getMasseSalariale(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateDebut,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFin) {
+        try {
+            if (dateDebut == null || dateFin == null) {
+                return ResponseEntity.badRequest()
+                        .body(creerDashboardErreur("Les dates de dÃ©but et de fin sont obligatoires"));
+            }
+            if (dateDebut.isAfter(dateFin)) {
+                return ResponseEntity.badRequest()
+                        .body(creerDashboardErreur("La date de dÃ©but doit Ãªtre antÃ©rieure Ã  la date de fin"));
+            }
+
+            double masse = dashboardRHService.getMasseSalariale(dateDebut, dateFin);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("dateDebut", dateDebut);
+            response.put("dateFin", dateFin);
+            response.put("masseSalariale", masse);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("error : " + e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(creerDashboardErreur("Erreur lors du calcul de la masse salariale: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/manager")
     public ResponseEntity<?> getDashboardManagerParPeriode0(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateDebut,

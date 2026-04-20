@@ -79,6 +79,9 @@ public class VuePaieComplete {
     
     @Column(name = "salaire_brut", precision = 19, scale = 2)
     private BigDecimal salaireBrut;
+
+    @Column(name = "total_charges", precision = 10, scale = 4)
+    private BigDecimal totalCharges;
     
     @Column(name = "total_taux", precision = 10, scale = 4)
     private BigDecimal totalTaux;
@@ -223,5 +226,8 @@ public class VuePaieComplete {
     public void setMoisPaieId(Integer moisPaieId) {this.moisPaieId = moisPaieId;}
     public String getModePaiement() {return modePaiement;}
     public void setModePaiement(String modePaiement) {this.modePaiement = modePaiement;}
+
+    public BigDecimal getTotalCharges() {return totalCharges;}
+    public void setTotalCharges(BigDecimal totalCharges) {this.totalCharges = totalCharges;}
     
 }

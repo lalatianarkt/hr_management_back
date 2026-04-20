@@ -1,7 +1,10 @@
 package com.rh.manage.Repository;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import com.rh.manage.Model.User;
@@ -40,5 +43,8 @@ public interface UserRepository extends JpaRepository<User, String> {
         ORDER BY e.nom ASC, e.prenom ASC
     """)
     List<User> findAllWithEmployeAndTypeUser();
+
+    @EntityGraph(attributePaths = {"employe", "userRoles", "userRoles.typeUser"})
+    Page<User> findAll(Pageable pageable);
 
 }

@@ -81,6 +81,16 @@ CREATE TABLE nationalite(
    PRIMARY KEY(id)
 );
 
+CREATE TABLE calendrier_ferie(
+   id SERIAL,
+   date_ferie DATE NOT NULL,
+   libelle VARCHAR(50) ,
+   created_at TIMESTAMP NOT NULL,
+   modified_at TIMESTAMP,
+   est_actif BOOLEAN,
+   PRIMARY KEY(id)
+);
+
 CREATE TABLE Employe(
    id VARCHAR(50) ,
    nom VARCHAR(100)  NOT NULL,

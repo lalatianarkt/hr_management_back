@@ -34,6 +34,7 @@ import jakarta.transaction.Transactional;
 
 
 @RestController
+@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/api/users")
 public class UserController {
 
@@ -90,6 +91,10 @@ public class UserController {
                 "message", "Token envoyé avec succès à " + user.getEmail(),
                 "success", true
             ));
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -97,11 +102,18 @@ public class UserController {
         }
     }
 
+
     @PostMapping("/confirmUser")
     public ResponseEntity<?> confirmUser(@RequestBody Map<String, String> request) {
         try {
             String email = request.get("email");
             String tokenInput = request.get("token");
+
+            System.out.println("-------------------tonga ato eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee---------------------------------");
+            System.out.println("Email: " + email);
+            System.out.println("Token: " + tokenInput);
+            System.out.println("---------------------------------------------------------------------------------------------------");
+
 
             if (email == null || tokenInput == null) {
                 return ResponseEntity.badRequest().body(Map.of("message", "Email et token requis"));
@@ -317,41 +329,116 @@ public class UserController {
         }
     }
 
-    // @GetMapping("/admin/list")
-    // public ResponseEntity<?> getAdminUserList() {
-    //     try {
-    //         List<UserListDTO> users = userService.getAllUsersForAdminList();
-    //         return ResponseEntity.ok(users);
-    //     } catch (Exception e) {
-    //         e.printStackTrace();
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-    //             "status", 500,
-    //             "message", "Erreur lors de la récupération des utilisateurs : " + e.getMessage()
-    //         ));
-    //     }
-    // }
+    @GetMapping("/admin/list")
+    public ResponseEntity<?> getAdminUserList() {
+        try {
+            List<UserListDTO> users = userService.getAllUsersForAdminList();
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", 500,
+                "message", "Erreur lors de la recuperation des utilisateurs : " + e.getMessage()
+            ));
+        }
+    }
 
-    // @PatchMapping("/{id}/statut")
-    // public ResponseEntity<?> updateUserStatut(@PathVariable String id, @RequestBody UserDecisionRequest request) {
-    //     try {
-    //         User updatedUser = userService.updateUserStatut(id, request.getStatut());
-    //         return ResponseEntity.ok(Map.of(
-    //             "status", 200,
-    //             "message", "Statut utilisateur mis à jour avec succès",
-    //             "userId", updatedUser.getId(),
-    //             "statut", updatedUser.getStatut()
-    //         ));
-    //     } catch (IllegalArgumentException e) {
-    //         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-    //             "status", 400,
-    //             "message", e.getMessage()
-    //         ));
-    //     } catch (Exception e) {
-    //         e.printStackTrace();
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-    //             "status", 500,
-    //             "message", "Erreur lors de la mise à jour du statut : " + e.getMessage()
-    //         ));
-    //     }
-    // }
+    @GetMapping("/admin/list/paged")
+    public ResponseEntity<?> getAdminUserListPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Map<String, Object> result = userService.getAllUsersForAdminListPaged(page, size);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", 500,
+                "message", "Erreur lors de la recuperation des utilisateurs : " + e.getMessage()
+            ));
+        }
+    }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable String id) {
+        try {
+            userService.deleteUserById(id);
+            return ResponseEntity.ok(Map.of(
+                "status", 200,
+                "message", "Utilisateur supprime avec succes",
+                "userId", id
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", 500,
+                "message", "Erreur lors de la suppression de l'utilisateur : " + e.getMessage()
+            ));
+        }
+    }
+    @PatchMapping("/{id}/roles")
+    public ResponseEntity<?> toggleUserRole(@PathVariable String id, @RequestBody Map<String, Object> request) {
+        try {
+            Object typeUserIdValue = request.get("typeUserId");
+            Object authorizedValue = request.get("authorized");
+
+            if (typeUserIdValue == null || authorizedValue == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "status", 400,
+                    "message", "typeUserId et authorized sont requis"
+                ));
+            }
+
+            Integer typeUserId = Integer.valueOf(typeUserIdValue.toString());
+            boolean authorized = Boolean.parseBoolean(authorizedValue.toString());
+
+            userService.toggleUserRole(id, typeUserId, authorized);
+
+            return ResponseEntity.ok(Map.of(
+                "status", 200,
+                "message", authorized ? "Role assigne avec succes" : "Role retire avec succes",
+                "userId", id,
+                "typeUserId", typeUserId,
+                "authorized", authorized
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                "status", 400,
+                "message", e.getMessage()
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", 500,
+                "message", "Erreur lors de la mise a jour des roles : " + e.getMessage()
+            ));
+        }
+    }
+
+    @PatchMapping("/{id}/statut")
+    public ResponseEntity<?> updateUserStatut(@PathVariable String id, @RequestBody UserDecisionRequest request) {
+        try {
+            User updatedUser = userService.updateUserStatut(id, request.getStatut());
+            return ResponseEntity.ok(Map.of(
+                "status", 200,
+                "message", "Statut utilisateur mis a jour avec succes",
+                "userId", updatedUser.getId(),
+                "statut", updatedUser.getStatut()
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                "status", 400,
+                "message", e.getMessage()
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", 500,
+                "message", "Erreur lors de la mise a jour du statut : " + e.getMessage()
+            ));
+        }
+    }
 }
+
+
+
+

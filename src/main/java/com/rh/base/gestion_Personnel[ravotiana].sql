@@ -265,14 +265,6 @@ CREATE TABLE abreviation(
    PRIMARY KEY(id)
 );
 
-CREATE TABLE type_demande(
-   id VARCHAR(50) ,
-   type VARCHAR(150) ,
-   created_at TIMESTAMP NOT NULL,
-   modified_at TIMESTAMP,
-   PRIMARY KEY(id)
-);
-
 CREATE TABLE formule(
    id VARCHAR(50) ,
    base VARCHAR(50) ,
@@ -370,10 +362,11 @@ CREATE TABLE notifications(
    id_utilisateur_destinataire VARCHAR(50) ,
    lien VARCHAR(50) ,
    reference_type VARCHAR(50) ,
-   reference_id VARCHAR(150) ,
-   estLu BOOLEAN DEFAULT FALSE,
+   reference_id INTEGER,
+   estLu BOOLEAN,
    created_at TIMESTAMP,
    modified_at TIMESTAMP,
+   statut INTEGER,
    PRIMARY KEY(id)
 );
 
@@ -578,31 +571,6 @@ CREATE TABLE Mode_paiement(
    FOREIGN KEY(id_2) REFERENCES Employe(id)
 );
 
-CREATE TABLE demande_absence(
-   id VARCHAR(50) ,
-   created_at TIMESTAMP NOT NULL,
-   modified_at TIMESTAMP,
-   statut INTEGER,
-   date_heure_absence_debut TIMESTAMP,
-   date_heure_bsence_fin TIMESTAMP,
-   commentaite TEXT,
-   id_1 VARCHAR(50) ,
-   id_2 VARCHAR(50) ,
-   PRIMARY KEY(id),
-   FOREIGN KEY(id_1) REFERENCES Employe(id),
-   FOREIGN KEY(id_2) REFERENCES type_demande(id)
-);
-
-CREATE TABLE doc_justificatif(
-   id VARCHAR(50) ,
-   url_piece_justificatif VARCHAR(150) ,
-   created_at TIMESTAMP NOT NULL,
-   commentaire VARCHAR(150) ,
-   id_1 VARCHAR(50) ,
-   PRIMARY KEY(id),
-   FOREIGN KEY(id_1) REFERENCES demande_absence(id)
-);
-
 CREATE TABLE periode_paie(
    id VARCHAR(50) ,
    date_debut DATE,
@@ -693,6 +661,8 @@ CREATE TABLE mouvement(
    commentaire VARCHAR(255) ,
    created_at TIMESTAMP NOT NULL,
    modified_at TIMESTAMP,
+   commentaire_annulation TEXT,
+   commentaire_manager TEXT,
    id_1 VARCHAR(50) ,
    id_2 VARCHAR(50) ,
    id_3 VARCHAR(50)  NOT NULL,

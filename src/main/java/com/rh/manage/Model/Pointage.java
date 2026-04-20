@@ -8,13 +8,13 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Entity
 @Table(name = "pointage")
 public class Pointage {
+    private static final AtomicInteger ID_COUNTER = new AtomicInteger(0);
+
     @Id
     @Column(name = "id", length = 50)
     private String id;
@@ -71,12 +71,9 @@ public class Pointage {
    @PrePersist
     public void prePersist() {
         if (this.id == null || this.id.trim().isEmpty()) {
-            // Format: PT-YYYYMMDD-HHMMSS-SSS-RRR
-            // RRR = Random 3 chiffres pour éviter les collisions dans la même milliseconde
-            LocalDateTime now = LocalDateTime.now();
-            String dateTime = now.format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS"));
-            String random = String.format("%03d", ThreadLocalRandom.current().nextInt(1000));
-            this.id = "PT-" + dateTime + "-" + random;
+            // Format court: PT-0001, PT-0002, ...
+            int next = ID_COUNTER.updateAndGet(current -> (current % 9999) + 1);
+            this.id = String.format("PT-%04d", next);
         }
 
         if (this.createdAt == null) {
@@ -271,3 +268,4 @@ public class Pointage {
         this.estEnConge = estEnConge;
     }
 }
+

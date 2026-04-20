@@ -93,45 +93,44 @@ public class PaieService {
                     newPaie.setInformationSociete(informationSocieteService.getInformationSocieteById(infoSociete.getId()));
                     newPaie.setStatutCloture(0); // Brouillon
                     
-                    // Récupérer infos employé
-                    List<InfosProfessionnelles> lesInfos = infosProfessionnellesService
-                        .getInfosProfessionnellesByEmployeId(paie.getEmploye().getId());
-                    
-                    if (lesInfos == null || lesInfos.isEmpty()) {
-                        erreurs.add("Aucune information professionnelle pour l'employé " + paie.getEmploye().getId());
+                    // Récupérer info pro actif
+                    InfosProfessionnelles infoProActif;
+                    try {
+                        infoProActif = infosProfessionnellesService.getInfosProEmploye(paie.getEmploye().getId());
+                    } catch (Exception ex) {
+                        erreurs.add("Aucune information professionnelle active pour l'employé " + paie.getEmploye().getId());
                         continue;
                     }
                     
-                    InfosProfessionnelles derniereInfo = lesInfos.get(0);
-                    
                     // Vérifier les données nécessaires
-                    if (derniereInfo.getPoste() == null) {
+                    if (infoProActif.getPoste() == null) {
                         erreurs.add("Poste non défini pour l'employé " + paie.getEmploye().getId());
                         continue;
                     }
                     
-                    if (derniereInfo.getMatricule() == null || derniereInfo.getMatricule().trim().isEmpty()) {
+                    if (infoProActif.getMatricule() == null || infoProActif.getMatricule().trim().isEmpty()) {
                         erreurs.add("Matricule non défini pour l'employé " + paie.getEmploye().getId());
                         continue;
                     }
                     
-                    if (derniereInfo.getEmploye() == null) {
+                    if (infoProActif.getEmploye() == null) {
                         erreurs.add("Information employé manquante pour ID " + paie.getEmploye().getId());
                         continue;
                     }
                     
                     // Remplir les informations
-                    newPaie.setFonction(derniereInfo.getPoste().getNom());
-                    newPaie.setMatricule(Integer.parseInt(derniereInfo.getMatricule()));
-                    newPaie.setNom(derniereInfo.getEmploye().getNom());
-                    newPaie.setPrenom(derniereInfo.getEmploye().getPrenom());
+                    newPaie.setInfoPro(infoProActif); // snapshot info pro actif
+                    newPaie.setFonction(infoProActif.getPoste().getNom());
+                    newPaie.setMatricule(Integer.parseInt(infoProActif.getMatricule()));
+                    newPaie.setNom(infoProActif.getEmploye().getNom());
+                    newPaie.setPrenom(infoProActif.getEmploye().getPrenom());
                     newPaie.setDatePaiement(null);
-                    newPaie.setSalaireBase(BigDecimal.valueOf(derniereInfo.getSalaireBase()));
-                    // newPaie.setNumCnaps(derniereInfo.getEmploye().getNumCnaps());
-                    newPaie.setDepartement(derniereInfo.getDepartement().getNom());
+                    newPaie.setSalaireBase(BigDecimal.valueOf(infoProActif.getSalaireBase()));
+                    // newPaie.setNumCnaps(infoProActif.getEmploye().getNumCnaps());
+                    newPaie.setDepartement(infoProActif.getDepartement().getNom());
                     // Ancienneté
-                    if (derniereInfo.getDateEmbauche() != null) {
-                        String anciennete = ancienneteService.calculerAnciennete(derniereInfo.getDateEmbauche());
+                    if (infoProActif.getDateEmbauche() != null) {
+                        String anciennete = ancienneteService.calculerAnciennete(infoProActif.getDateEmbauche());
                         newPaie.setAncienneteAnMoisJour(anciennete);
                     }
                     
@@ -300,6 +299,7 @@ public class PaieService {
                     existingPaie.setCongesPris(paieDetails.getCongesPris());
                     existingPaie.setSoldeConges(paieDetails.getSoldeConges());
                     existingPaie.setStatutCloture(paieDetails.getStatutCloture());
+                    existingPaie.setInfoPro(paieDetails.getInfoPro());
                     
                     existingPaie.setModifiedAt(LocalDateTime.now());
                     
@@ -407,3 +407,8 @@ public class PaieService {
         return paieRepository.findFirstByEmployeIdOrderByCreatedAtDesc(idEmploye);
     }
 }
+
+
+
+
+

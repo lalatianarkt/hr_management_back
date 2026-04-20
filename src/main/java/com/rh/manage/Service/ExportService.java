@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -81,6 +82,12 @@ public class ExportService {
 
     @Autowired
     ModePaiementService modePaiementService;
+
+    @Autowired
+    VuePaieFilleService vuePaieFilleService;
+
+    @Autowired
+    VuePaieCompleteService vuePaieCompleteService;
 
     public InfosProfessionnelles preparationExportEmploye(){
         return new InfosProfessionnelles();
@@ -425,6 +432,110 @@ public class ExportService {
 
         workbook.write(response.getOutputStream());
         workbook.close();
+    }
+
+    public void exportEtatPaieExcel(List<VuePaieComplete> paies, HttpServletResponse response, boolean includeDetails) throws IOException {
+        XSSFWorkbook workbook = new XSSFWorkbook();
+
+        XSSFSheet sheet = workbook.createSheet("Etat de paie");
+        XSSFRow header = sheet.createRow(0);
+
+        int col = 0;
+        header.createCell(col++).setCellValue("Paie ID");
+        header.createCell(col++).setCellValue("Matricule");
+        header.createCell(col++).setCellValue("Nom");
+        header.createCell(col++).setCellValue("Prenom");
+        header.createCell(col++).setCellValue("Nom complet");
+        header.createCell(col++).setCellValue("Departement");
+        header.createCell(col++).setCellValue("Fonction");
+        header.createCell(col++).setCellValue("Periode debut");
+        header.createCell(col++).setCellValue("Periode fin");
+        header.createCell(col++).setCellValue("Mois");
+        header.createCell(col++).setCellValue("Annee");
+        header.createCell(col++).setCellValue("Statut");
+        header.createCell(col++).setCellValue("Mode paiement");
+        header.createCell(col++).setCellValue("Salaire base");
+        header.createCell(col++).setCellValue("Salaire brut");
+        header.createCell(col++).setCellValue("Total retenues");
+        header.createCell(col++).setCellValue("Total cotisations");
+        header.createCell(col++).setCellValue("Salaire net");
+
+        int rowIndex = 1;
+        for (VuePaieComplete paie : paies) {
+            XSSFRow row = sheet.createRow(rowIndex++);
+            int c = 0;
+            row.createCell(c++).setCellValue(safeStr(paie.getPaieId()));
+            row.createCell(c++).setCellValue(safeStr(paie.getMatricule()));
+            row.createCell(c++).setCellValue(safeStr(paie.getNom()));
+            row.createCell(c++).setCellValue(safeStr(paie.getPrenom()));
+            row.createCell(c++).setCellValue(safeStr(paie.getNomComplet()));
+            row.createCell(c++).setCellValue(safeStr(paie.getDepartement()));
+            row.createCell(c++).setCellValue(safeStr(paie.getFonction()));
+            row.createCell(c++).setCellValue(paie.getDateDebutPeriode() != null ? paie.getDateDebutPeriode().toString() : "");
+            row.createCell(c++).setCellValue(paie.getDateFinPeriode() != null ? paie.getDateFinPeriode().toString() : "");
+            row.createCell(c++).setCellValue(paie.getMoisPaieNom() != null ? paie.getMoisPaieNom() : "");
+            row.createCell(c++).setCellValue(paie.getAnneePaie() != null ? paie.getAnneePaie().toString() : "");
+            row.createCell(c++).setCellValue(safeStr(paie.getStatutPaieLibelle()));
+            row.createCell(c++).setCellValue(safeStr(paie.getModePaiement()));
+            row.createCell(c++).setCellValue(paie.getSalaireBase() != null ? paie.getSalaireBase().toString() : "");
+            row.createCell(c++).setCellValue(paie.getSalaireBrut() != null ? paie.getSalaireBrut().toString() : "");
+            row.createCell(c++).setCellValue(paie.getTotalRetenue() != null ? paie.getTotalRetenue().toString() : "");
+            row.createCell(c++).setCellValue(paie.getTotalCotisations() != null ? paie.getTotalCotisations().toString() : "");
+            row.createCell(c++).setCellValue(paie.getSalaireNet() != null ? paie.getSalaireNet().toString() : "");
+        }
+
+        for (int i = 0; i < col; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        if (includeDetails) {
+            XSSFSheet detailsSheet = workbook.createSheet("Rubriques");
+            XSSFRow detailsHeader = detailsSheet.createRow(0);
+            int dcol = 0;
+            detailsHeader.createCell(dcol++).setCellValue("Paie ID");
+            detailsHeader.createCell(dcol++).setCellValue("Matricule");
+            detailsHeader.createCell(dcol++).setCellValue("Nom complet");
+            detailsHeader.createCell(dcol++).setCellValue("Code");
+            detailsHeader.createCell(dcol++).setCellValue("Rubrique");
+            detailsHeader.createCell(dcol++).setCellValue("Type");
+            detailsHeader.createCell(dcol++).setCellValue("Base");
+            detailsHeader.createCell(dcol++).setCellValue("Taux");
+            detailsHeader.createCell(dcol++).setCellValue("Montant");
+            detailsHeader.createCell(dcol++).setCellValue("Ordre");
+
+            int drowIndex = 1;
+            for (VuePaieComplete paie : paies) {
+                List<VuePaieFille> lignes = vuePaieFilleService.getByIdPaie(paie.getPaieId());
+                if (lignes == null || lignes.isEmpty()) {
+                    continue;
+                }
+                for (VuePaieFille ligne : lignes) {
+                    XSSFRow row = detailsSheet.createRow(drowIndex++);
+                    int dc = 0;
+                    row.createCell(dc++).setCellValue(safeStr(paie.getPaieId()));
+                    row.createCell(dc++).setCellValue(safeStr(paie.getMatricule()));
+                    row.createCell(dc++).setCellValue(safeStr(paie.getNomComplet()));
+                    row.createCell(dc++).setCellValue(safeStr(ligne.getCode()));
+                    row.createCell(dc++).setCellValue(safeStr(ligne.getRubriqueNom()));
+                    row.createCell(dc++).setCellValue(safeStr(ligne.getTypeRubrique()));
+                    row.createCell(dc++).setCellValue(ligne.getBase() != null ? ligne.getBase().toString() : "");
+                    row.createCell(dc++).setCellValue(ligne.getTaux() != null ? ligne.getTaux().toString() : "");
+                    row.createCell(dc++).setCellValue(ligne.getMontant() != null ? ligne.getMontant().toString() : "");
+                    row.createCell(dc++).setCellValue(String.valueOf(ligne.getOrdre()));
+                }
+            }
+
+            for (int i = 0; i < dcol; i++) {
+                detailsSheet.autoSizeColumn(i);
+            }
+        }
+
+        try (ServletOutputStream outputStream = response.getOutputStream()) {
+            workbook.write(outputStream);
+            outputStream.flush();
+        } finally {
+            workbook.close();
+        }
     }
 
     
@@ -1467,6 +1578,16 @@ private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern
 
 public String genererBulletinPaieHtml(VuePaieComplete paie, List<VuePaieFille> rubriques) {
     StringBuilder html = new StringBuilder();
+    InfosProfessionnelles infoPro = null;
+    try {
+        if (paie != null && paie.getIdEmploye() != null) {
+            infoPro = infosProfessionnellesService
+                    .getDerniereInfoProfessionnelleByEmployeId(paie.getIdEmploye())
+                    .orElse(null);
+        }
+    } catch (Exception e) {
+        infoPro = null;
+    }
 
     html.append("<!DOCTYPE html>\n<html>\n<head>\n")
         .append("<meta charset=\"UTF-8\">\n")
@@ -1606,7 +1727,11 @@ public String genererBulletinPaieHtml(VuePaieComplete paie, List<VuePaieFille> r
                 // Troisième ligne: Classification seule
                 html.append("<tr>")
                         .append("<td>Classification:</td>")
-                        .append("<td>").append(paie.getCategorieSalaire()).append("</td>")
+                        .append("<td>")
+                        .append(infoPro != null && infoPro.getClassification() != null
+                                ? infoPro.getClassification()
+                                : safeStr(paie.getCategorieSalaire()))
+                        .append("</td>")
                         .append("</tr>")
                         .append("</table>");
 
@@ -1665,7 +1790,7 @@ public String genererBulletinPaieHtml(VuePaieComplete paie, List<VuePaieFille> r
         .append("<table class=\"main-table\">")
         .append("<thead>")
         .append("<tr>")
-        .append("<th>Nombre</th>")
+        .append("<th>Code</th>")
         .append("<th>Désignation</th>")
         .append("<th>Nombre</th>")
         .append("<th>Base</th>")
@@ -1676,10 +1801,11 @@ public String genererBulletinPaieHtml(VuePaieComplete paie, List<VuePaieFille> r
         .append("</thead>")
         .append("<tbody>");
 
-    // Ligne 1: SALAIRE DE BASE (1010)
+    // Ligne 1: SALAIRE DE BASE
     BigDecimal salaireBase = getSalaireBaseFromRubriques(rubriques);
+    String salaireBaseCode = getRubriqueCode(rubriques, "SALAIRE DE BASE", "Gain", "1010");
     html.append("<tr>")
-        .append("<td class=\"text-center\">1010</td>")
+        .append("<td class=\"text-center\">").append(salaireBaseCode).append("</td>")
         .append("<td>SALAIRE DE BASE</td>")
         .append("<td class=\"text-center\"></td>")
         .append("<td class=\"text-right\"></td>")
@@ -1688,29 +1814,31 @@ public String genererBulletinPaieHtml(VuePaieComplete paie, List<VuePaieFille> r
         .append("<td class=\"text-right\"></td>")
         .append("</tr>");
 
-    // Ligne IRSA (5010)
-    BigDecimal irsaMontant = getRubriqueMontant(rubriques, "IRSA", "Retenue");
-    html.append("<tr>")
-        .append("<td class=\"text-center\">5010</td>")
-        .append("<td>IRSA</td>")
-        .append("<td class=\"text-center\"></td>")
-        .append("<td class=\"text-right\"></td>")
-        .append("<td class=\"text-right\"></td>")
-        .append("<td class=\"text-right\"></td>")
-        .append("<td class=\"text-right\">").append(formatCurrency(irsaMontant)).append("</td>")
-        .append("</tr>");
+    // Ligne IRSA
+//     BigDecimal irsaMontant = getRubriqueMontant(rubriques, "IRSA", "Retenue");
+//     String irsaCode = getRubriqueCode(rubriques, "IRSA", "Retenue", "IRSA");
+//     html.append("<tr>")
+//         .append("<td class=\"text-center\">").append(irsaCode).append("</td>")
+//         .append("<td>IRSA</td>")
+//         .append("<td class=\"text-center\"></td>")
+//         .append("<td class=\"text-right\"></td>")
+//         .append("<td class=\"text-right\"></td>")
+//         .append("<td class=\"text-right\"></td>")
+//         .append("<td class=\"text-right\">").append(formatCurrency(irsaMontant)).append("</td>")
+//         .append("</tr>");
 
-    // Ligne RETENUE MUTUELLE (5020)
-    BigDecimal mutuelleMontant = getRubriqueMontant(rubriques, "RETENUE MUTUELLE", "Retenue");
-    html.append("<tr>")
-        .append("<td class=\"text-center\">5020</td>")
-        .append("<td>RETENUE MUTUELLE</td>")
-        .append("<td class=\"text-center\"></td>")
-        .append("<td class=\"text-right\"></td>")
-        .append("<td class=\"text-right\"></td>")
-        .append("<td class=\"text-right\"></td>")
-        .append("<td class=\"text-right\">").append(formatCurrency(mutuelleMontant)).append("</td>")
-        .append("</tr>");
+    // Ligne RETENUE MUTUELLE
+//     BigDecimal mutuelleMontant = getRubriqueMontant(rubriques, "RETENUE MUTUELLE", "Retenue");
+//     String mutuelleCode = getRubriqueCode(rubriques, "RETENUE MUTUELLE", "Retenue", "RET");
+//     html.append("<tr>")
+//         .append("<td class=\"text-center\">").append(mutuelleCode).append("</td>")
+//         .append("<td>RETENUE MUTUELLE</td>")
+//         .append("<td class=\"text-center\"></td>")
+//         .append("<td class=\"text-right\"></td>")
+//         .append("<td class=\"text-right\"></td>")
+//         .append("<td class=\"text-right\"></td>")
+//         .append("<td class=\"text-right\">").append(formatCurrency(mutuelleMontant)).append("</td>")
+//         .append("</tr>");
 
     // Ajouter d'autres rubriques s'il y en a
     for (VuePaieFille r : rubriques) {
@@ -1778,7 +1906,7 @@ html.append("<div style=\"display: flex; justify-content: space-between; align-i
     .append("<div style=\"margin-bottom: 5px; font-weight: bold;\">Compteurs de congés</div>")
     .append("<table style=\"width: 100%;\">")
     .append("<tr><th>Compteurs</th><th>Pris</th><th>Solde</th></tr>")
-    .append("<tr><td>Congés</td><td class=\"text-center\">0,000</td><td class=\"text-center\">93,000</td></tr>")
+    .append("<tr><td>Congés</td><td class=\"text-center\">3,000</td><td class=\"text-center\">30,000</td></tr>")
     .append("</table>")
     .append("</div>")
     
@@ -1787,9 +1915,9 @@ html.append("<div style=\"display: flex; justify-content: space-between; align-i
     .append("<div style=\"margin-bottom: 5px; font-weight: bold;\">Dates de congés</div>")
     .append("<table style=\"width: 100%; margin: 0 auto;\">")
     .append("<tr><th style=\"width: 50%;\">Du</th><th style=\"width: 50%;\">Au</th></tr>")
-    .append("<tr><td style=\"height: 25px;\"></td><td style=\"height: 25px;\"></td></tr>")
-    .append("<tr><td style=\"height: 25px;\"></td><td style=\"height: 25px;\"></td></tr>")
-    .append("<tr><td style=\"height: 25px;\"></td><td style=\"height: 25px;\"></td></tr>")
+    .append("<tr><td style=\"height: 25px;\">01/01/2026</td><td style=\"height: 25px;\">01/01/2026</td></tr>")
+    .append("<tr><td style=\"height: 25px;\">02/01/2026</td><td style=\"height: 25px;\">02/01/2026</td></tr>")
+    .append("<tr><td style=\"height: 25px;\">03/01/2026</td><td style=\"height: 25px;\">03/01/2026</td></tr>")
     .append("</table>")
     .append("</div>")
     
@@ -1838,6 +1966,19 @@ private BigDecimal getRubriqueMontant(List<VuePaieFille> rubriques, String rubri
         }
     }
     return BigDecimal.ZERO;
+}
+
+private String getRubriqueCode(List<VuePaieFille> rubriques, String rubriqueNom, String type, String fallback) {
+    for (VuePaieFille r : rubriques) {
+        if (rubriqueNom.equalsIgnoreCase(r.getRubriqueNom())) {
+            if ("Retenue".equalsIgnoreCase(type) && !isGain(r)) {
+                return safeStr(r.getCode()).isEmpty() ? fallback : r.getCode();
+            } else if ("Gain".equalsIgnoreCase(type) && isGain(r)) {
+                return safeStr(r.getCode()).isEmpty() ? fallback : r.getCode();
+            }
+        }
+    }
+    return fallback;
 }
 
 private BigDecimal getRubriqueBase(List<VuePaieFille> rubriques, String rubriqueNom) {
@@ -1920,6 +2061,171 @@ private BigDecimal getRubriqueTaux(List<VuePaieFille> rubriques, String rubrique
 
 
 
+    public void exportBulletinPaieExcel(String idPaie, HttpServletResponse response) throws IOException {
+        VuePaieComplete paie = vuePaieCompleteService.getByIdPaie(idPaie);
+        List<VuePaieFille> rubriques = vuePaieFilleService.getByIdPaie(idPaie);
+
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        XSSFSheet sheet = workbook.createSheet("Bulletin");
+
+        int rowIndex = 0;
+        XSSFRow titleRow = sheet.createRow(rowIndex++);
+        titleRow.createCell(0).setCellValue("Bulletin de paie");
+
+        XSSFRow infoRow1 = sheet.createRow(rowIndex++);
+        infoRow1.createCell(0).setCellValue("Paie ID");
+        infoRow1.createCell(1).setCellValue(idPaie);
+        infoRow1.createCell(3).setCellValue("Employe");
+        infoRow1.createCell(4).setCellValue(paie != null ? safeStr(paie.getNomComplet()) : "");
+
+        XSSFRow infoRow2 = sheet.createRow(rowIndex++);
+        infoRow2.createCell(0).setCellValue("Matricule");
+        infoRow2.createCell(1).setCellValue(paie != null ? safeStr(paie.getMatricule()) : "");
+        infoRow2.createCell(3).setCellValue("Departement");
+        infoRow2.createCell(4).setCellValue(paie != null ? safeStr(paie.getDepartement()) : "");
+
+
+        XSSFRow infoRow3 = sheet.createRow(rowIndex++);
+        infoRow3.createCell(0).setCellValue("Periode debut");
+        infoRow3.createCell(1).setCellValue(paie != null && paie.getDateDebutPeriode() != null ? paie.getDateDebutPeriode().toString() : "");
+        infoRow3.createCell(3).setCellValue("Periode fin");
+        infoRow3.createCell(4).setCellValue(paie != null && paie.getDateFinPeriode() != null ? paie.getDateFinPeriode().toString() : "");
+
+        rowIndex++;
+
+        XSSFRow header = sheet.createRow(rowIndex++);
+        header.createCell(0).setCellValue("Code");
+        header.createCell(1).setCellValue("Rubrique");
+        header.createCell(2).setCellValue("Base");
+        header.createCell(3).setCellValue("Taux");
+        header.createCell(4).setCellValue("Gain");
+        header.createCell(5).setCellValue("Retenue");
+        header.createCell(6).setCellValue("Charge patronale");
+
+        if (rubriques != null) {
+            for (VuePaieFille r : rubriques) {
+                XSSFRow row = sheet.createRow(rowIndex++);
+                row.createCell(0).setCellValue(safeStr(r.getCode()));
+                row.createCell(1).setCellValue(safeStr(r.getRubriqueNom()));
+                row.createCell(2).setCellValue(r.getBase() != null ? r.getBase().doubleValue() : 0);
+                row.createCell(3).setCellValue(r.getTaux() != null ? r.getTaux().doubleValue() : 0);                boolean gain = isGain(r);
+                boolean chargePatronale = r.getTypeRubrique() != null && r.getTypeRubrique().toLowerCase().contains("charge patronale");
+                row.createCell(4).setCellValue(gain && r.getMontant() != null ? r.getMontant().doubleValue() : 0);
+                row.createCell(5).setCellValue(!gain && !chargePatronale && r.getMontant() != null ? r.getMontant().doubleValue() : 0);
+                row.createCell(6).setCellValue(chargePatronale && r.getMontant() != null ? r.getMontant().doubleValue() : 0);}
+        }
+
+        for (int i = 0; i <= 6; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        try (ServletOutputStream outputStream = response.getOutputStream()) {
+            workbook.write(outputStream);
+            outputStream.flush();
+        } finally {
+            workbook.close();
+        }
+    }
+
+    public void exportBulletinsDepartementExcel(String departement, HttpServletResponse response) throws IOException {
+        List<VuePaieComplete> paies = vuePaieCompleteService.getByDepartement(departement);
+
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        XSSFSheet sheet = workbook.createSheet("Bulletins_Departement");
+
+        int rowIndex = 0;
+        XSSFRow titleRow = sheet.createRow(rowIndex++);
+        titleRow.createCell(0).setCellValue("Bulletins de paie - Departement");
+        titleRow.createCell(1).setCellValue(safeStr(departement));
+
+        // Construire les colonnes des rubriques (1 ligne par employe)
+        List<String> rubriqueKeys = new ArrayList<>();
+        List<String> rubriqueLabels = new ArrayList<>();
+        if (paies != null) {
+            java.util.LinkedHashSet<String> seen = new java.util.LinkedHashSet<>();
+            for (VuePaieComplete p : paies) {
+                if (p == null) continue;
+                List<VuePaieFille> rubriques = vuePaieFilleService.getByIdPaie(p.getPaieId());
+                if (rubriques == null) continue;
+                for (VuePaieFille r : rubriques) {
+                    if (r == null) continue;
+                    String code = safeStr(r.getCode());
+                    String nom = safeStr(r.getRubriqueNom());
+                    String key = !code.isEmpty() ? code : nom;
+                    String label = !code.isEmpty() ? (code + " - " + nom) : nom;
+                    if (!key.isEmpty() && seen.add(key)) {
+                        rubriqueKeys.add(key);
+                        rubriqueLabels.add(label);
+                    }
+                }
+            }
+        }
+
+        rowIndex++;
+
+        XSSFRow header = sheet.createRow(rowIndex++);
+        int h = 0;
+        header.createCell(h++).setCellValue("Paie ID");
+        header.createCell(h++).setCellValue("Matricule");
+        header.createCell(h++).setCellValue("Nom complet");
+        header.createCell(h++).setCellValue("Departement");
+        header.createCell(h++).setCellValue("Mois");
+        header.createCell(h++).setCellValue("Annee");
+        header.createCell(h++).setCellValue("Date debut");
+        header.createCell(h++).setCellValue("Date fin");
+        header.createCell(h++).setCellValue("Salaire brut");
+        header.createCell(h++).setCellValue("Salaire net");        for (String label : rubriqueLabels) {
+            header.createCell(h++).setCellValue(label);
+        }
+
+        if (paies != null) {
+            for (VuePaieComplete p : paies) {
+                XSSFRow row = sheet.createRow(rowIndex++);
+                int c = 0;
+                row.createCell(c++).setCellValue(safeStr(p.getPaieId()));
+                row.createCell(c++).setCellValue(safeStr(p.getMatricule()));
+                row.createCell(c++).setCellValue(safeStr(p.getNomComplet()));
+                row.createCell(c++).setCellValue(safeStr(p.getDepartement()));
+                row.createCell(c++).setCellValue(p.getMoisPaieNom() != null ? p.getMoisPaieNom() : "");
+                row.createCell(c++).setCellValue(p.getAnneePaie() != null ? p.getAnneePaie() : 0);
+                row.createCell(c++).setCellValue(p.getDateDebutPeriode() != null ? p.getDateDebutPeriode().toString() : "");
+                row.createCell(c++).setCellValue(p.getDateFinPeriode() != null ? p.getDateFinPeriode().toString() : "");
+                row.createCell(c++).setCellValue(p.getSalaireBrut() != null ? p.getSalaireBrut().doubleValue() : 0);
+                row.createCell(c++).setCellValue(p.getSalaireNet() != null ? p.getSalaireNet().doubleValue() : 0);                Map<String, BigDecimal> rubriqueMontants = new HashMap<>();
+                List<VuePaieFille> rubriques = vuePaieFilleService.getByIdPaie(p.getPaieId());
+                if (rubriques != null) {
+                    for (VuePaieFille r : rubriques) {
+                        if (r == null) continue;
+                        String code = safeStr(r.getCode());
+                        String nom = safeStr(r.getRubriqueNom());
+                        String key = !code.isEmpty() ? code : nom;
+                        if (key.isEmpty()) continue;
+                        BigDecimal montant = r.getMontant();
+                        if (montant == null) continue;
+                        BigDecimal current = rubriqueMontants.getOrDefault(key, BigDecimal.ZERO);
+                        rubriqueMontants.put(key, current.add(montant));
+                    }
+                }
+
+                for (String key : rubriqueKeys) {
+                    BigDecimal val = rubriqueMontants.get(key);
+                    row.createCell(c++).setCellValue(val != null ? val.doubleValue() : 0);
+                }
+            }
+        }
+
+        int totalCols = 11 + rubriqueKeys.size();
+        for (int i = 0; i < totalCols; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        try (ServletOutputStream outputStream = response.getOutputStream()) {
+            workbook.write(outputStream);
+            outputStream.flush();
+        } finally {
+            workbook.close();
+        }
+    }
     // --- Utilitaires ---
     private String safeStr(String s) {
         return s == null ? "" : s;
@@ -2013,3 +2319,7 @@ private BigDecimal getRubriqueTaux(List<VuePaieFille> rubriques, String rubrique
 
 
 }
+
+
+
+

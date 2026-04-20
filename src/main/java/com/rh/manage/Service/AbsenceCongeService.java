@@ -9,11 +9,11 @@ import com.rh.manage.Dto.AbsenceCongeFilterDTO;
 import com.rh.manage.Dto.StatistiquesAbsenceDTO;
 import com.rh.manage.Model.InfosProfessionnelles;
 import com.rh.manage.Repository.AbsenceCongeRepository;
+import com.rh.manage.Service.CalendrierTravailService;
 import com.rh.manage.View.AbsenceCongeView;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,13 +21,15 @@ public class AbsenceCongeService {
     
     private final AbsenceCongeRepository absenceCongeRepository;
     private final EmployeService employeService; // Service pour avoir le nombre total d'employés
+    private final CalendrierTravailService calendrierTravailService;
 
     @Autowired
     InfosProfessionnellesService infosProfessionnellesService;
 
-    public AbsenceCongeService(AbsenceCongeRepository absenceCongeRepository, EmployeService employeService) {
+    public AbsenceCongeService(AbsenceCongeRepository absenceCongeRepository, EmployeService employeService, CalendrierTravailService calendrierTravailService) {
         this.absenceCongeRepository = absenceCongeRepository;
         this.employeService = employeService;
+        this.calendrierTravailService = calendrierTravailService;
     }
 
     @Transactional(readOnly = true)
@@ -83,7 +85,7 @@ public class AbsenceCongeService {
         LocalDate dateDebut = LocalDate.now().minusDays(100);
         LocalDate dateFin = LocalDate.now();
         return getStatistiquesGlobales(dateDebut, dateFin);
-    }
+    } 
 
     @Transactional(readOnly = true)
     public StatistiquesAbsenceDTO getStatistiquesGlobales(LocalDate dateDebut, LocalDate dateFin) {
@@ -104,7 +106,7 @@ public class AbsenceCongeService {
                 dateDebut, dateFin, AbsenceCongeView.TypeAbsence.conge);
         Long totalEmployes = employeService.countTotalEmployes();
         
-        long joursOuvrables = calculerJoursOuvrables(dateDebut, dateFin);
+        long joursOuvrables = calendrierTravailService.calculerJoursOuvrablesAvecFeries(dateDebut, dateFin);
         Double tauxAbsence = totalEmployes > 0 ? 
                 (totalAbsences.doubleValue() / (totalEmployes * joursOuvrables)) * 100 : 0.0;
         Double tauxConge = totalEmployes > 0 ? 
@@ -150,7 +152,7 @@ public class AbsenceCongeService {
                 .count();
 
         long totalEmployes = employeService.countEmployesByDepartement(departementId);
-        long joursOuvrables = calculerJoursOuvrables(dateDebut, dateFin);
+        long joursOuvrables = calendrierTravailService.calculerJoursOuvrables(dateDebut, dateFin);
 
         double tauxAbsence = totalEmployes > 0 && joursOuvrables > 0
                 ? (totalAbsences / (double) (totalEmployes * joursOuvrables)) * 100
@@ -172,7 +174,7 @@ public class AbsenceCongeService {
         
         LocalDate dateDebut = LocalDate.now().minusDays(100);
         LocalDate dateFin = LocalDate.now();
-        long joursOuvrables = calculerJoursOuvrables(dateDebut, dateFin);
+        long joursOuvrables = calendrierTravailService.calculerJoursOuvrables(dateDebut, dateFin);
         
         Double tauxAbsence = (totalAbsences.doubleValue() / joursOuvrables) * 100;
         Double tauxConge = (totalConges.doubleValue() / joursOuvrables) * 100;
@@ -220,18 +222,4 @@ public class AbsenceCongeService {
         //         .build();
     }
     
-    private long calculerJoursOuvrables(LocalDate debut, LocalDate fin) {
-        long jours = 0;
-        LocalDate date = debut;
-        
-        while (!date.isAfter(fin)) {
-            // Exclure weekends (samedi=6, dimanche=7)
-            int jourSemaine = date.getDayOfWeek().getValue();
-            if (jourSemaine < 6) {
-                jours++;
-            }
-            date = date.plusDays(1);
-        }
-        return jours;
     }
-}

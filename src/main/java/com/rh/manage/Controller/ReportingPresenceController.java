@@ -21,7 +21,6 @@ public class ReportingPresenceController {
     
     private final ReportingPresenceService reportingPresenceService;
     
-    @Autowired
     public ReportingPresenceController(ReportingPresenceService reportingPresenceService) {
         this.reportingPresenceService = reportingPresenceService;
     }
@@ -41,8 +40,6 @@ public class ReportingPresenceController {
             return ResponseEntity.internalServerError().build();
         }
     }
-
-    
     
     // 2. Rechercher avec filtres (POST)
     @PostMapping("/recherche")
@@ -259,6 +256,7 @@ public class ReportingPresenceController {
             return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
             
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }
     }

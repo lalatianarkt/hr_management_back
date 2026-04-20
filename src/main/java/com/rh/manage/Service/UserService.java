@@ -16,6 +16,10 @@ import jakarta.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
@@ -82,207 +86,208 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
+    public void deleteUserById(String id) {
+        if (!userRepository.existsById(id)) {
+            throw new RuntimeException("Utilisateur non trouve");
+        }
+        userRepository.deleteById(id);
+    }
+
     public Optional<User> getById(String id){
         return userRepository.findById(id);
     }
 
-    // public List<UserListDTO> getAllUsersForAdminList() {
-    //     List<User> users = userRepository.findAllWithEmployeAndTypeUser();
-    //     List<UserListDTO> result = new ArrayList<>();
+    public List<UserListDTO> getAllUsersForAdminList() {
+        List<User> users = userRepository.findAllWithEmployeAndTypeUser();
+        List<UserListDTO> result = new ArrayList<>();
 
-    //     for (User user : users) {
-    //         Employe employe = user.getEmploye();
-    //         InfosProfessionnelles infosPro = infosProfessionnellesService.findInfosProfessionnellesByIdEmploye(employe.getId());
-    //         String departement = "Non assigné";
-    //         String role = "Non défini";
+        for (User user : users) {
+            Employe employe = user.getEmploye();
+            if (employe == null) {
+                continue;
+            }
 
-    //         TypeUser typeUser = user.getTypeUser();
-    //         if (typeUser == null) {
-    //             typeUser = userRoleService.getPrimaryRoleForUser(user.getId());
-    //         }
-    //         if (typeUser != null) {
-    //             role = typeUser.getType();
-    //         }
+            InfosProfessionnelles infosPro = infosProfessionnellesService.findInfosProfessionnellesByIdEmploye(employe.getId());
+            String departement = "Non assigne";
 
-    //         if (infosPro != null && infosPro.getDepartement() != null) {
-    //             departement = infosPro.getDepartement().getNom();
-    //         }
+            if (infosPro != null && infosPro.getDepartement() != null) {
+                departement = infosPro.getDepartement().getNom();
+            }
 
-    //         result.add(new UserListDTO(
-    //             user.getId(),
-    //             employe.getNom(),
-    //             employe.getPrenom(),
-    //             role,
-    //             departement,
-    //             user.getStatut()
-    //         ));
-    //     }
+            result.add(new UserListDTO(
+                user.getId(),
+                infosPro != null ? infosPro.getMatricule() : null,
+                employe.getNom(),
+                employe.getPrenom(),
+                resolveRoleForAdminList(user),
+                departement,
+                user.getStatut(),
+                extractRoleIds(user),
+                extractRoleTypes(user)
+            ));
+        }
 
-    //     return result;
-    // }
+        return result;
+    }
 
-    // public User updateUserStatut(String userId, Integer statut) {
-    //     if (statut == null || (statut != 1 && statut != 2)) {
-    //         throw new IllegalArgumentException("Statut invalide. Utilisez 1 pour accepter ou 2 pour refuser.");
-    //     }
+    public Map<String, Object> getAllUsersForAdminListPaged(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("employe.nom").ascending().and(Sort.by("employe.prenom").ascending()));
+        Page<User> usersPage = userRepository.findAll(pageable);
 
-    //     User user = userRepository.findById(userId)
-    //         .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+        List<UserListDTO> result = new ArrayList<>();
+        for (User user : usersPage.getContent()) {
+            Employe employe = user.getEmploye();
+            if (employe == null) {
+                continue;
+            }
 
-    //     TypeUser typeUser = user.getTypeUser();
-    //     if (typeUser == null) {
-    //         typeUser = userRoleService.getPrimaryRoleForUser(user.getId());
-    //     }
-    //     if (typeUser == null || !"Admin".equalsIgnoreCase(typeUser.getType())) {
-    //         throw new IllegalArgumentException("Cette action est réservée aux utilisateurs de type Admin.");
-    //     }
+            InfosProfessionnelles infosPro = infosProfessionnellesService.findInfosProfessionnellesByIdEmploye(employe.getId());
+            String departement = "Non assigne";
 
-    //     if (user.getStatut() == null || user.getStatut() != 0) {
-    //         throw new IllegalArgumentException("Seuls les utilisateurs Admin en attente peuvent être acceptés ou refusés.");
-    //     }
+            if (infosPro != null && infosPro.getDepartement() != null) {
+                departement = infosPro.getDepartement().getNom();
+            }
 
-    //     user.setStatut(statut);
-    //     user.setModifiedAt(LocalDateTime.now());
-    //     return userRepository.save(user);
-    // }
+            result.add(new UserListDTO(
+                user.getId(),
+                infosPro != null ? infosPro.getMatricule() : null,
+                employe.getNom(),
+                employe.getPrenom(),
+                resolveRoleForAdminList(user),
+                departement,
+                user.getStatut(),
+                extractRoleIds(user),
+                extractRoleTypes(user)
+            ));
+        }
 
-    // public Map<String, Object> authenticateUser(UserRequest userRequest) throws Exception, AuthenticationException, ResourceNotFoundException {
-    //     User user = authenticate(userRequest.getUser());
-    //     if (user == null) {
-    //         throw new AuthenticationException("Identifiants invalides");
-    //     }
-        
-    //     Employe employe = employeService.getById(user.getEmploye().getId())
-    //         .orElseThrow(() -> new ResourceNotFoundException("Employé non trouvé"));
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", result);
+        response.put("page", usersPage.getNumber());
+        response.put("size", usersPage.getSize());
+        response.put("totalElements", usersPage.getTotalElements());
+        response.put("totalPages", usersPage.getTotalPages());
+        response.put("last", usersPage.isLast());
+        return response;
+    }
 
-    //     InfosProfessionnelles infosPro = infosProfessionnellesService.findInfosProfessionnellesByIdEmploye(employe.getId());
-    //     String jwt = jwtService.generateToken(user, infosPro);
-    //     Token token = tokenService.generateToken(user, "AUTH", jwt);
-    //     String path = null;
-    //     List<UserRole> liste_user_role = roleUserService.getTypeUserByIdUserAndStatut(user.getId(), 0);
-    //     if(user.getTypeUser()!= null){
-    //         path = determineRedirectPath(user.getTypeUser().getType());
-    //     } else {
-    //         path = determineRedirectPath(liste_user_role.get(0).getTypeUser().getType());
-    //     }
-        
-    //     Map<String, Object> response = new HashMap<>();
-    //     response.put("status", 200);
-    //     response.put("message", "Authentification réussie");
-    //     response.put("token", token.getTokenGenere());
-    //     response.put("infosPro", infosPro);
-    //     response.put("user", buildUserResponse(user, employe, user.getTypeUser().getType()));
-    //     response.put("path", path);
-    //     return response;
-    // }
-    
-    // private String determineRedirectPath(String userType) {
-    //     switch (userType) {
-    //         case "Admin":
-    //             return "/dashboard-RH/";
-    //         case "Manager":
-    //             return "/dashboard-Manager/";
-    //         case "Employe":
-    //             return "/emp/infos/fiche-perso";
-    //         case "IT":
-    //             return "/dashboard-IT/";
-    //         default:
-    //             return "/";
-    //     }
-    // }
+    public User updateUserStatut(String userId, Integer statut) {
+        if (statut == null || (statut != 1 && statut != 3)) {
+            throw new IllegalArgumentException("Statut invalide. Utilisez 1 pour accepter ou 3 pour refuser.");
+        }
 
-    // public User authenticate(User userRequest) throws Exception {
-    //     Optional<User> optionalUser = userRepository.findByEmail(userRequest.getEmail());
-    //     User utilisateur = null;
-    
-    //     if (optionalUser.isEmpty()) {
-    //         throw new Exception("Aucun utilisateur trouvé avec cet email !");
-    //     } else {
-    //         utilisateur = optionalUser.get();
-    //     }
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("Utilisateur non trouve"));
 
-    //     if(optionalUser.get().getStatut() != 1){
-    //         throw new Exception("Votre compte est en cours de validation");
-    //     }
+        boolean hasAdminRole = false;
+        if (user.getUserRoles() != null && !user.getUserRoles().isEmpty()) {
+            hasAdminRole = user.getUserRoles().stream()
+                .anyMatch(role -> role.getTypeUser() != null && "Admin".equalsIgnoreCase(role.getTypeUser().getType()));
+        }
 
-    //     if (!BCrypt.checkpw(userRequest.getPassword(), utilisateur.getPassword())) {
-    //         throw new Exception("Mot de passe incorrect !");
-    //     }
+        if (!hasAdminRole) {
+            hasAdminRole = userRoleService.hasRole(userId, "Admin");
+        }
 
-    //     employeService.getById(userRequest.getEmploye().getId())
-    //         .orElseThrow(() -> new ResourceNotFoundException("Employé non trouvé"));
+        if (!hasAdminRole) {
+            throw new IllegalArgumentException("Cette action est reservee aux utilisateurs de type Admin.");
+        }
 
-    //     List<UserRole> typeUsers = roleUserService.getTypeUserByIdUserAndStatut(optionalUser.get().getId(), 0);
-    //     if(typeUsers.size() > 0){
-    //         utilisateur.setTypeUser(typeUsers.get(0).getTypeUser());
-    //     } else {
-    //         UserRequest userReq = new UserRequest();
-    //         userReq.setUser(userRequest);
-    //         userReq.setTypeUser(null);
-    //         authenticateUser(userReq);
-    //     }
-    //     return utilisateur;
-    // } 
+        if (user.getStatut() == null || user.getStatut() != 2) {
+            throw new IllegalArgumentException("Seuls les utilisateurs Admin en attente peuvent etre acceptes ou refuses.");
+        }
 
-    // public Map<String, Object> authenticateUser(UserRequest userRequest) throws Exception, AuthenticationException, ResourceNotFoundException {
-    //     User user = authenticate(userRequest.getUser());
-    //     System.out.println("idUser : " + user.getId());
-    //     if (user == null) {
-    //         throw new AuthenticationException("Identifiants invalides");
-    //     }
-        
-    //     Employe employe = employeService.getById(user.getEmploye().getId())
-    //         .orElseThrow(() -> new ResourceNotFoundException("Employé non trouvé"));
+        user.setStatut(statut);
+        user.setModifiedAt(LocalDateTime.now());
+        return userRepository.save(user);
+    }
 
-    //     InfosProfessionnelles infosPro = infosProfessionnellesService.findInfosProfessionnellesByIdEmploye(employe.getId());
-        
-    //     // Récupérer tous les rôles actifs de l'utilisateur
-    //     List<UserRole> listeUserRoles = roleUserService.getUserRolesByUserIdAndStatut(user.getId(), 1);
-    //     System.out.println("listeUserRoles size++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ : " + listeUserRoles.size());
-        
-    //     if (listeUserRoles.isEmpty()) {
-    //         throw new ResourceNotFoundException("Aucun rôle trouvé pour cet utilisateur");
-    //     }
-        
-    //     String jwt = jwtService.generateToken(user, userRequest.getTypeUser() != null ? userRequest.getTypeUser() : listeUserRoles.get(0).getTypeUser().getType());
-    //     Token token = tokenService.generateToken(user, "AUTH", jwt);
-        
-    //     Map<String, Object> response = new HashMap<>();
-    //     response.put("status", 200);
-    //     response.put("message", "Authentification réussie");
-    //     response.put("token", token.getTokenGenere());
-    //     response.put("infosPro", infosPro);
-        
-    //     // Si l'utilisateur a plusieurs rôles, on lui envoie la liste des rôles
-    //     if (listeUserRoles.size() > 1) {
-    //         List<Map<String, Object>> rolesList = new ArrayList<>();
-    //         for (UserRole userRole : listeUserRoles) {
-    //             Map<String, Object> roleInfo = new HashMap<>();
-    //             roleInfo.put("id", userRole.getUser().getId());
-    //             roleInfo.put("type", userRole.getTypeUser().getType());
-    //             roleInfo.put("libelle", getRoleLibelle(userRole.getTypeUser().getType()));
-    //             roleInfo.put("path", determineRedirectPath(userRole.getTypeUser().getType()));
-    //             response.put("user", buildUserResponse(user, employe, userRole.getTypeUser().getType()));
-    //             rolesList.add(roleInfo);
-    //         }
-            
-    //         response.put("hasMultipleRoles", true);
-    //         response.put("roles", rolesList);
-    //         response.put("needsRoleSelection", true);
-    //         response.put("message", "Plusieurs rôles détectés. Veuillez choisir un rôle.");
-            
-    //     } else {
-    //         // Un seul rôle, redirection directe
-    //         TypeUser typeUser = listeUserRoles.get(0).getTypeUser();
-    //         String path = determineRedirectPath(typeUser.getType());
-            
-    //         response.put("hasMultipleRoles", false);
-    //         response.put("path", path);
-    //         response.put("role", typeUser.getType());
-    //         response.put("message", "Authentification réussie");
-    //     }
-    //     return response;
-    // }
+    public UserRole toggleUserRole(String userId, Integer typeUserId, boolean authorized) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("Utilisateur non trouve"));
+
+        TypeUser typeUser = typeUserService.getTypeUserById(typeUserId)
+            .orElseThrow(() -> new RuntimeException("Type utilisateur introuvable"));
+
+        if (authorized) {
+            return userRoleService.assignRole(user, typeUser);
+        }
+
+        userRoleService.delete(userId, typeUserId);
+        return null;
+    }
+
+    private List<Integer> extractRoleIds(User user) {
+        List<Integer> roleIds = new ArrayList<>();
+
+        if (user.getUserRoles() != null && !user.getUserRoles().isEmpty()) {
+            for (UserRole role : user.getUserRoles()) {
+                if (role.getTypeUser() != null) {
+                    roleIds.add(role.getTypeUser().getId());
+                }
+            }
+        } else {
+            List<UserRole> persistedRoles = userRoleService.getByUserId(user.getId());
+            for (UserRole role : persistedRoles) {
+                if (role.getTypeUser() != null) {
+                    roleIds.add(role.getTypeUser().getId());
+                }
+            }
+        }
+
+        return roleIds;
+    }
+
+    private List<String> extractRoleTypes(User user) {
+        List<String> roleTypes = new ArrayList<>();
+
+        if (user.getUserRoles() != null && !user.getUserRoles().isEmpty()) {
+            for (UserRole role : user.getUserRoles()) {
+                if (role.getTypeUser() != null && role.getTypeUser().getType() != null) {
+                    roleTypes.add(role.getTypeUser().getType());
+                }
+            }
+        } else {
+            List<UserRole> persistedRoles = userRoleService.getByUserId(user.getId());
+            for (UserRole role : persistedRoles) {
+                if (role.getTypeUser() != null && role.getTypeUser().getType() != null) {
+                    roleTypes.add(role.getTypeUser().getType());
+                }
+            }
+        }
+
+        return roleTypes;
+    }
+
+    private String resolveRoleForAdminList(User user) {
+        if (user.getUserRoles() != null && !user.getUserRoles().isEmpty()) {
+            Optional<UserRole> adminRole = user.getUserRoles().stream()
+                .filter(role -> role.getTypeUser() != null && role.getTypeUser().getType() != null)
+                .filter(role -> "Admin".equalsIgnoreCase(role.getTypeUser().getType()))
+                .findFirst();
+
+            if (adminRole.isPresent()) {
+                return adminRole.get().getTypeUser().getType();
+            }
+
+            Optional<UserRole> activeRole = user.getUserRoles().stream()
+                .filter(role -> role.getTypeUser() != null && role.getTypeUser().getType() != null)
+                .filter(role -> Integer.valueOf(1).equals(role.getStatut()))
+                .findFirst();
+
+            if (activeRole.isPresent()) {
+                return activeRole.get().getTypeUser().getType();
+            }
+
+            UserRole firstRole = user.getUserRoles().get(0);
+            if (firstRole.getTypeUser() != null && firstRole.getTypeUser().getType() != null) {
+                return firstRole.getTypeUser().getType();
+            }
+        }
+
+        TypeUser primaryRole = userRoleService.getPrimaryRoleForUser(user.getId());
+        return primaryRole != null ? primaryRole.getType() : "Non defini";
+    }
 
     public Map<String, Object> authenticateUser(UserRequest userRequest) throws Exception, AuthenticationException, ResourceNotFoundException {
         User user = authenticate(userRequest.getUser());
@@ -343,7 +348,7 @@ public class UserService {
         User utilisateur = null;
 
         if (optionalUser.isEmpty()) {
-            throw new Exception("Aucun utilisateur trouvé avec cet email !");
+            throw new Exception("Identifiant ou mot de passe incorrect !");
         } else {
             utilisateur = optionalUser.get();
         }
@@ -353,7 +358,7 @@ public class UserService {
         }       
         
         if (!BCrypt.checkpw(userRequest.getPassword(), utilisateur.getPassword())) {
-            throw new Exception("Mot de passe incorrect !");
+            throw new Exception("Identifiant ou mot de passe incorrect !");
         }
 
         employeService.getById(utilisateur.getEmploye().getId())
@@ -432,7 +437,7 @@ public class UserService {
                 return "/dashboard-Manager/";
             case "Employe":
                 return "/emp/infos/fiche-perso";
-            case "IT":
+            case "Admin_Systeme":
                 return "/dashboard-IT/";
             default:
                 return "/";
@@ -638,3 +643,12 @@ public class UserService {
     }
     
 }
+
+
+
+
+
+
+
+
+

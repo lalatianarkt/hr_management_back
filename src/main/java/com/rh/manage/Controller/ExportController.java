@@ -33,6 +33,7 @@ import com.rh.manage.Service.VuePaieFilleService;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.RequestParam;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/export")
@@ -102,6 +103,41 @@ public class ExportController {
         }
     }
     
+    @GetMapping("/bulletin/{idPaie}/excel")
+    public void exportPaieEmployeExcel(
+            @PathVariable String idPaie,
+            HttpServletResponse response) throws IOException {
+        try {
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition",
+                "attachment; filename=bulletin_paie_" + idPaie + ".xlsx");
+
+            exportService.exportBulletinPaieExcel(idPaie, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                "Erreur lors de la generation de l'Excel: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/bulletin/departement/{departement}/excel")
+    public void exportPaieDepartementExcel(
+            @PathVariable String departement,
+            HttpServletResponse response) throws IOException {
+        try {
+            String safeDept = departement.replaceAll("[^a-zA-Z0-9-_]", "_");
+
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition",
+                "attachment; filename=bulletins_" + safeDept + ".xlsx");
+
+            exportService.exportBulletinsDepartementExcel(departement, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                "Erreur lors de la generation de l'Excel departement: " + e.getMessage());
+        }
+    }
     @GetMapping("/format/heureSup")
     public void exportFormatHeureSup(HttpServletResponse response) throws IOException {
         try {
@@ -164,6 +200,43 @@ public class ExportController {
         }
     }
 
+    @GetMapping("/etat-paie")
+    public void exportEtatPaie(
+            HttpServletResponse response,
+            @RequestParam(required = false) String departement,
+            @RequestParam(required = false) Integer statutCloture,
+            @RequestParam(required = false) String categorieSalaire,
+            @RequestParam(required = false) String dateDebut,
+            @RequestParam(required = false) String dateFin,
+            @RequestParam(required = false) Integer mois,
+            @RequestParam(required = false) Integer annee,
+            @RequestParam(required = false, defaultValue = "true") boolean details
+    ) throws IOException {
+        try {
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=etat_paie.xlsx");
+
+            List<VuePaieComplete> paies;
+            if (mois != null && annee != null) {
+                paies = vuePaieCompleteService.getByMoisAnnee(mois, annee);
+            } else {
+                LocalDate debut = (dateDebut != null && !dateDebut.isBlank()) ? LocalDate.parse(dateDebut) : null;
+                LocalDate fin = (dateFin != null && !dateFin.isBlank()) ? LocalDate.parse(dateFin) : null;
+
+                if (departement == null && statutCloture == null && categorieSalaire == null && debut == null && fin == null) {
+                    paies = vuePaieCompleteService.getAll();
+                } else {
+                    paies = vuePaieCompleteService.searchByCriteria(departement, statutCloture, categorieSalaire, debut, fin);
+                }
+            }
+
+            exportService.exportEtatPaieExcel(paies, response, details);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erreur export etat de paie: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> exportFicheEmployeEnPdf(
             @PathVariable("id") String idEmp,
@@ -181,3 +254,4 @@ public class ExportController {
     }
 
 }
+

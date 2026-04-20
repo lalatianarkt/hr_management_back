@@ -197,13 +197,6 @@ public class PaieFilleService {
                 paieFilleToCreate.setBase(BigDecimal.valueOf(montant));
                 // paieFilleToCreate.setMontant(BigDecimal.valueOf(montant));    
             } 
-            if(rubriquePaie.getCode().equalsIgnoreCase("IND_CONG")){
-                System.out.println("Ato e+++++++++++++++++++++++++++++++");
-                MouvementSoldePaie mouvement = new MouvementSoldePaie();
-                mouvement.setIdEmploye(paie.getEmploye().getId());
-                mouvement.setIdPaie(paie.getId());
-                mouvementSoldePaieService.createWithPaie(mouvement, paieFilleToCreate);
-            }
 
             if(rubriquePaie.getFormule().getNombre() != null && rubriquePaie.getFormule().getTaux() != null){
                 montant = montant * paieFille.getNombre().doubleValue() * paieFille.getTaux().doubleValue() / 100;
@@ -219,6 +212,14 @@ public class PaieFilleService {
                 // System.out.println("taux : " + ato e);
                 paieFilleToCreate.setTaux(BigDecimal.valueOf(paieFille.getTaux().doubleValue()));
                 // paieFilleToCreate.setMontant(BigDecimal.valueOf(montant));
+            }
+
+            if(rubriquePaie.getCode().equalsIgnoreCase("IND_CONG")){
+                System.out.println("Ato e+++++++++++++++++++++++++++++++");
+                MouvementSoldePaie mouvement = new MouvementSoldePaie();
+                mouvement.setIdEmploye(paie.getEmploye().getId());
+                mouvement.setIdPaie(paie.getId());
+                mouvementSoldePaieService.createWithPaie(mouvement, paieFilleToCreate);
             }
  
             if(base.equalsIgnoreCase("SNET_IMP")){

@@ -45,6 +45,7 @@ public class MouvementSoldePaieService {
         Employe employe = employeService.getById(idEmp).get();
         int anneeActuel = LocalDateTime.now().getYear();
         double nb_conge_dans_paie = Double.parseDouble(paieFille.getNombre().toString());
+        System.out.println("nombre : " + paieFille.getNombre());
         mouvement.setNbCongeDansPaie(nb_conge_dans_paie);
         System.out.println("dernierMvt : " + mouvementSoldeService.getDernierMouvementSoldeParEmployeEtParAnnee(employe, anneeActuel).isPresent());
         if(mouvementSoldeService.getDernierMouvementSoldeParEmployeEtParAnnee(employe, anneeActuel).isPresent()){

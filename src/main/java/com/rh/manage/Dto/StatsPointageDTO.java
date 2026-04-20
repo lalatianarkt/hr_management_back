@@ -9,6 +9,7 @@ public class StatsPointageDTO {
     private double tempsEffectifMoyen; // Heures travaillées - retards
     private Map<String, Double> heuresParDepartement;
     private Map<String, Double> heuresSupParDepartement;
+    private Map<String, Double> retardsParDepartement;
     public double getTotalHeuresTravaillees() {
         return totalHeuresTravaillees;
     }
@@ -44,6 +45,12 @@ public class StatsPointageDTO {
     }
     public void setHeuresSupParDepartement(Map<String, Double> heuresSupParDepartement) {
         this.heuresSupParDepartement = heuresSupParDepartement;
+    }
+    public Map<String, Double> getRetardsParDepartement() {
+        return retardsParDepartement;
+    }
+    public void setRetardsParDepartement(Map<String, Double> retardsParDepartement) {
+        this.retardsParDepartement = retardsParDepartement;
     }
 
     

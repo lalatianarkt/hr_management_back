@@ -92,6 +92,11 @@ public class Paie {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     @JoinColumn(name = "id_info_societe", nullable = false, referencedColumnName = "id")
     private InformationSociete informationSociete;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JoinColumn(name = "id_info_pro", referencedColumnName = "id")
+    private InfosProfessionnelles infoPro;
     
     
     @ManyToOne(fetch = FetchType.LAZY)
@@ -267,6 +272,14 @@ public class Paie {
 
     public void setInformationSociete(InformationSociete informationSociete) {
         this.informationSociete = informationSociete;
+    }
+
+    public InfosProfessionnelles getInfoPro() {
+        return infoPro;
+    }
+
+    public void setInfoPro(InfosProfessionnelles infoPro) {
+        this.infoPro = infoPro;
     }
 
     public Employe getEmploye() {

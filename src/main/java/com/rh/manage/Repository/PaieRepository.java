@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import com.rh.manage.Model.Employe;
 import com.rh.manage.Model.Paie;
+import com.rh.manage.Model.PeriodePaie;
 
 import jakarta.transaction.Transactional;
 
@@ -20,6 +21,27 @@ import java.util.Optional;
 
 @Repository
 public interface PaieRepository extends JpaRepository<Paie, String> {
+
+       // Optional<List<Paie>> findByDepartementAndPeriodePaieId(String departementNom, Long periodePaieId);
+       
+        // NOUVELLE MÉTHODE : Compter les paies générées par département pour une période donnée
+       @Query("SELECT COUNT(p) FROM Paie p WHERE p.departement = :departementNom AND p.periodePaie.id = :periodePaieId")
+       long countByDepartementAndPeriodePaieId(@Param("departementNom") String departementNom, @Param("periodePaieId") String periodePaieId);
+       
+       // Alternative : Compter les paies générées par département ID
+       @Query("SELECT COUNT(p) FROM Paie p WHERE p.departement = :departementNom AND p.periodePaie = :periodePaie")
+       long countByDepartementAndPeriodePaie(@Param("departementNom") String departementNom, @Param("periodePaie") PeriodePaie periodePaie);
+       
+       // Compter les paies générées par département en utilisant l'ID du département via les infos pro
+       @Query("SELECT COUNT(p) FROM Paie p WHERE p.employe.id IN " +
+              "(SELECT ip.employe.id FROM InfosProfessionnelles ip WHERE ip.departement.id = :departementId AND ip.statut = 1) " +
+              "AND p.periodePaie.id = :periodePaieId")
+       long countByDepartementIdAndPeriodePaieId(@Param("departementId") Long departementId, @Param("periodePaieId") String periodePaieId);
+       
+       // Compter les paies générées par département en utilisant l'objet Departement
+       @Query("SELECT COUNT(p) FROM Paie p WHERE p.departement = :departementNom AND p.periodePaie = :periodePaie")
+       long countByDepartementAndPeriodePaieObject(@Param("departementNom") String departementNom, @Param("periodePaie") PeriodePaie periodePaie);
+       
        /**
         * Vérifie si une paie existe déjà pour un employé dans une période donnée
         * @param employeId L'identifiant de l'employé

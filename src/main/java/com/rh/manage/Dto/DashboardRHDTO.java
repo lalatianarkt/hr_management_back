@@ -238,6 +238,14 @@ public class DashboardRHDTO {
     private List<TopEmployeDTO> topAbsenteeisme;
     private List<TopEmployeDTO> topPerformers;
     private List<TopEmployeDTO> topRetardataires;  // NOUVEAU
+
+    // ==================== RETARDS (3 DERNIERS MOIS) ====================
+    private List<EvolutionRetardsDTO> evolutionRetards3DerniersMois;
+    /**
+     * Variation (%) entre le 1er et le dernier mois de la liste (négatif = baisse).
+     * Exemple: -31.0 signifie "baisse de 31%".
+     */
+    private Double variationRetards3DerniersMoisPourcentage;
     private List<AlerteDTO> alertes;
     private List<DemandeCongeEnCoursDTO> demandesCongesEnAttente;
     
@@ -470,6 +478,22 @@ public class DashboardRHDTO {
         this.topRetardataires = topRetardataires;
     }
 
+    public List<EvolutionRetardsDTO> getEvolutionRetards3DerniersMois() {
+        return evolutionRetards3DerniersMois;
+    }
+
+    public void setEvolutionRetards3DerniersMois(List<EvolutionRetardsDTO> evolutionRetards3DerniersMois) {
+        this.evolutionRetards3DerniersMois = evolutionRetards3DerniersMois;
+    }
+
+    public Double getVariationRetards3DerniersMoisPourcentage() {
+        return variationRetards3DerniersMoisPourcentage;
+    }
+
+    public void setVariationRetards3DerniersMoisPourcentage(Double variationRetards3DerniersMoisPourcentage) {
+        this.variationRetards3DerniersMoisPourcentage = variationRetards3DerniersMoisPourcentage;
+    }
+
     public List<AlerteDTO> getAlertes() {
         return alertes;
     }
@@ -514,7 +538,6 @@ public class DashboardRHDTO {
                 '}';
     }
 }
-
 
 
 
